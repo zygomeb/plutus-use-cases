@@ -9,7 +9,7 @@ import Prelude
 
 --------------------------------------------------------------------------------
 
-import Control.Monad (forM, forM_, void, when)
+import Control.Monad (forM, forM_, void, when, forever)
 import Control.Monad.Freer (Eff, Member, interpret, reinterpret, type (~>))
 import Control.Monad.Freer.Error (Error, throwError)
 import Control.Monad.Freer.Extras.Log (LogMsg, logDebug)
@@ -114,38 +114,45 @@ main = void $
 
 
     _ <- Simulator.waitNSlots 20
-    _ <- Simulator.callEndpointOnInstance cId2 "user-act" (depositAct 100)
+    maybErr <- Simulator.callEndpointOnInstance cId2 "user-action" (depositAct 100)
+    logShow $ maybErr
 
 -- begin wallet 3 logging balances
     logShow =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
     _ <- Simulator.waitNSlots 20
-    _ <- Simulator.callEndpointOnInstance cId3 "user-act" (depositAct 100)
+    _ <- Simulator.callEndpointOnInstance cId3 "user-action" (depositAct 100)
 
     logShow =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
     _ <- Simulator.waitNSlots 20
-    _ <- Simulator.callEndpointOnInstance cId3 "user-act" (depositAct 100)
+    _ <- Simulator.callEndpointOnInstance cId3 "user-action" (depositAct 100)
    
     logShow =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
     _ <- Simulator.waitNSlots 20
-    _ <- Simulator.callEndpointOnInstance cId3 "user-act" (collateralize)
+    _ <- Simulator.callEndpointOnInstance cId3 "user-action" (collateralize)
 
     logShow =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
     _ <- Simulator.waitNSlots 20
-    _ <- Simulator.callEndpointOnInstance cId3 "user-act" (borrow 70)
+    _ <- Simulator.callEndpointOnInstance cId3 "user-action" (borrow 70)
 
     logShow =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
     _ <- Simulator.waitNSlots 20
-    _ <- Simulator.callEndpointOnInstance cId3 "user-act" (repay 90)
+    _ <- Simulator.callEndpointOnInstance cId3 "user-action" (repay 90)
 
     logShow =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
     _ <- Simulator.waitNSlots 20
-    _ <- Simulator.callEndpointOnInstance cId3 "user-act" (decollateralize)
+    _ <- Simulator.callEndpointOnInstance cId3 "user-action" (decollateralize)
 
     logShow =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
     _ <- Simulator.waitNSlots 20
-    _ <- Simulator.callEndpointOnInstance cId3 "user-act" (withdraw 100)
+    _ <- Simulator.callEndpointOnInstance cId3 "user-action" (withdraw 100)
 
     logShow =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
+
+    _ <- forever $ do
+      liftIO $ print @String "---------------------------------------------  -> UPDATED BALANCES:"
+      _ <- Simulator.waitNSlots 10
+      _ <- Simulator.logBalances @(Builtin AaveContracts) =<< Simulator.currentBalances
+      pure () 
 -- we can add a demo that does liquidation later
     shutdown
 
