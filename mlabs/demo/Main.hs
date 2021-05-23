@@ -68,6 +68,9 @@ import Mlabs.Lending.Logic.Types (Coin, UserAct(..), UserId(..))
 
 import Debug.Trace (traceM)
 
+logShow :: Show a => a -> Simulation (Builtin AaveContracts) ()
+logShow = Simulator.logString @(Builtin AaveContracts) . show
+
 main :: IO ()
 main = void $
   Simulator.runSimulationWith handlers $ do
@@ -75,17 +78,76 @@ main = void $
 
     cidInit <- Simulator.activateContract (Wallet 1) Init
 
+    -- _simulatorMagic <- Simulator.activateContract
+
     -- The initial spend is enough to identify the entire market, provided the initial params are also clear.
     -- TODO: get pool info here.
-    someJSON <- flip Simulator.waitForState cidInit $ \json -> case fromJSON json of
-      Success (someJson :: Aeson.Value) -> Just someJson
+    -- not quite sure how to get the pool out of this state machine stuff.
+    -- apparently it is also the NFT approach?
+    lendingPool <- flip Simulator.waitForState cidInit $ \json -> case fromJSON json of
+      Success (Just (Semigroup.Last (someJson :: Lendex.LendingPool))) -> Just someJson
       _ -> Nothing
-    traceM $ "result:"
-    traceM $ show someJSON
+
+    _ <- Simulator.waitUntilFinished cidInit
+
+    let wallets = [Wallet i | i <- [2 .. 4]]
+
+    cIdsUsers <- fmap Map.fromList $
+      forM wallets $ \w -> do
+        cId <- Simulator.activateContract w $ User lendingPool
+        _ <- Simulator.waitForEndpoint cId "user-action"
+        pure (w, cId)
+
+    let cId2 = cIdsUsers Map.! Wallet 2
+    let cId3 = cIdsUsers Map.! Wallet 3
+    let _cId4 = cIdsUsers Map.! Wallet 4
+
+    ------------------------------------
+    -- Demo Simulation
+    -- wallet 2 deposits 100 ada
+    -- wallet 3 deposits 100 ada
+    -- wallet 3 collateralizes 100 aAda
+    -- wallet 3 borrows 70 ada
+    -- wallet 3 repays the borrow
+    -- wallet 3 de-collateralizes 100 aAda
+    -- wallet 3 withdraws 100 ada
 
 
+    _ <- Simulator.waitNSlots 20
+    _ <- Simulator.callEndpointOnInstance cId2 "user-act" (depositAct 100)
+
+-- begin wallet 3 logging balances
+    logShow =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
+    _ <- Simulator.waitNSlots 20
+    _ <- Simulator.callEndpointOnInstance cId3 "user-act" (depositAct 100)
+
+    logShow =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
+    _ <- Simulator.waitNSlots 20
+    _ <- Simulator.callEndpointOnInstance cId3 "user-act" (depositAct 100)
+   
+    logShow =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
+    _ <- Simulator.waitNSlots 20
+    _ <- Simulator.callEndpointOnInstance cId3 "user-act" (collateralize)
+
+    logShow =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
+    _ <- Simulator.waitNSlots 20
+    _ <- Simulator.callEndpointOnInstance cId3 "user-act" (borrow 70)
+
+    logShow =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
+    _ <- Simulator.waitNSlots 20
+    _ <- Simulator.callEndpointOnInstance cId3 "user-act" (repay 90)
+
+    logShow =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
+    _ <- Simulator.waitNSlots 20
+    _ <- Simulator.callEndpointOnInstance cId3 "user-act" (decollateralize)
+
+    logShow =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
+    _ <- Simulator.waitNSlots 20
+    _ <- Simulator.callEndpointOnInstance cId3 "user-act" (withdraw 100)
+
+    logShow =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
+-- we can add a demo that does liquidation later
     shutdown
-
 
 data AavePAB
 
@@ -114,11 +176,13 @@ handleLendexContract ::
 handleLendexContract = Builtin.handleBuiltin getSchema getContract
   where
     getSchema = \case
-      Init -> Builtin.endpointsToSchemas @Empty
+      Init -> Builtin.endpointsToSchemas @Lendex.GovernLendexSchemaOnly
       User _ -> Builtin.endpointsToSchemas @Lendex.UserLendexSchemaOnly
     getContract = \case
       Init -> SomeBuiltin (Lendex.startLendex startParams)
-      User _ -> SomeBuiltin (Lendex.userAction depositAct)
+      -- what the hell do we call with lending pool to get this to work?
+      -- is there something special we need to do to run a statemachine client?
+      User _ -> SomeBuiltin (Lendex.userEndpoints)
 
 handlers :: SimulatorEffectHandlers (Builtin AaveContracts)
 handlers =
@@ -145,8 +209,46 @@ initCoinCfg = Lendex.CoinCfg
   , coinCfg'liquidationBonus = 2 % 10
   }
 
-depositAct = DepositAct
-      { act'amount          = 100
-      , act'asset           = Value.AssetClass (Ada.adaSymbol, Ada.adaToken)  
+adaCoin :: Coin
+adaCoin = Value.AssetClass (Ada.adaSymbol, Ada.adaToken)  
+
+depositAct :: Integer -> UserAct
+depositAct i = DepositAct
+      { act'amount          = i
+      , act'asset           = adaCoin
+      }
+
+withdraw :: Integer -> UserAct
+withdraw i = WithdrawAct
+      { act'amount         = i
+      , act'asset          = adaCoin
+      }
+
+collateralize :: UserAct
+collateralize = SetUserReserveAsCollateralAct
+      { act'asset           = adaCoin
+      , act'useAsCollateral = True
+      , act'portion         = 1 % 1
+      }
+
+decollateralize :: UserAct
+decollateralize = SetUserReserveAsCollateralAct
+      { act'asset           = adaCoin
+      , act'useAsCollateral = False
+      , act'portion         = 1 % 1
+      }
+
+borrow :: Integer -> UserAct
+borrow i = BorrowAct
+      { act'asset           = adaCoin
+      , act'amount          = i
+      , act'rate            = Lendex.StableRate
+      }
+
+repay :: Integer -> UserAct
+repay i = RepayAct
+      { act'asset           = adaCoin
+      , act'amount          = i
+      , act'rate            = Lendex.StableRate
       }
 -- --------------------------------------------------------------------------------

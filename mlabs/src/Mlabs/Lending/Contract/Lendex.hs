@@ -9,7 +9,7 @@ module Mlabs.Lending.Contract.Lendex(
   , userEndpoints
   , PriceOracleLendexSchema, PriceOracleApp
   , priceOracleEndpoints
-  , GovernLendexSchema, GovernApp
+  , GovernLendexSchema, GovernLendexSchemaOnly, GovernApp
   , governEndpoints
   , StartParams(..)
   -- * Test endpoints
@@ -57,6 +57,7 @@ import qualified Wallet.Emulator as Emulator
 import qualified Data.Map as M
 -- import Data.Text.Prettyprint.Doc.Extras
 
+import Schema (ToSchema(..))
 import Debug.Trace (traceM)
 
 type Lendex = SM.StateMachine LendingPool Act
@@ -174,7 +175,10 @@ priceOracleEndpoints = forever priceOracleAction'
 
 type GovernLendexSchema =
   BlockchainActions
-    .\/ Endpoint "govern-action" GovernAct
+  .\/ GovernLendexSchemaOnly
+
+type GovernLendexSchemaOnly =
+    Endpoint "govern-action" GovernAct
     .\/ Endpoint "start-lendex"  StartParams
 
 data StartParams = StartParams
@@ -183,6 +187,9 @@ data StartParams = StartParams
   }
   deriving stock (Show, Generic)
   deriving anyclass (FromJSON, ToJSON)
+
+instance ToSchema StartParams where
+  toSchema = undefined
 
 type GovernApp a = Contract (Maybe (Semigroup.Last LendingPool)) GovernLendexSchema LendexError a
 

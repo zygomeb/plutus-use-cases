@@ -59,7 +59,7 @@ import PlutusTx.AssocMap (Map)
 import qualified PlutusTx.AssocMap as M
 import GHC.Generics
 import Plutus.V1.Ledger.Crypto (PubKeyHash(..))
-import Schema (ToSchema(..), FormSchema(..))
+import Schema (ToSchema(..))
 
 -- | Class that converts to inlinable builtin string
 class Showt a where
@@ -279,6 +279,9 @@ data Act
   deriving stock (Show, Generic, Hask.Eq)
   -- deriving anyclass (FromJSON, ToJSON, ToSchema)
   deriving anyclass (FromJSON, ToJSON)
+
+instance ToSchema GovernAct where
+  toSchema = undefined
 
 -- | Lending pool action
 data UserAct

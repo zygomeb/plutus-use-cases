@@ -76,7 +76,7 @@ react input = do
     --  * user has enough collateral for the borrow
     borrowAct currentTime uid asset amount _rate = do
       hasEnoughLiquidityToBorrow asset amount
-      collateralNonBorrow uid asset
+      -- collateralNonBorrow uid asset
       hasEnoughCollateral uid asset amount
       updateOnBorrow
       updateReserveState currentTime asset
@@ -91,10 +91,10 @@ react input = do
       liquidity <- getsReserve asset (wallet'deposit . reserve'wallet)
       guardError "Not enough liquidity for asset" (liquidity >= amount)
 
-    collateralNonBorrow uid asset = do
-      col <- getsWallet uid asset wallet'collateral
-      guardError "Collateral can not be used as borrow for user"
-        (col == 0)
+    -- collateralNonBorrow uid asset = do
+      -- col <- getsWallet uid asset wallet'collateral
+      -- guardError "Collateral can not be used as borrow for user"
+        -- (col == 0)
 
     hasEnoughCollateral uid asset amount = do
       bor <- toAda asset amount
