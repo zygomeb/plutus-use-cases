@@ -8,8 +8,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 -- | Types for lending app
 --
--- inspired by aave spec. See
---
+-- inspired by aave spec. See 
 -- * https://docs.aave.com/developers/v/2.0/the-core-protocol/lendingpool
 module Mlabs.Lending.Logic.Types(
     LendingPool(..)
@@ -60,16 +59,24 @@ import PlutusTx.AssocMap (Map)
 import qualified PlutusTx.AssocMap as M
 import GHC.Generics
 import Plutus.V1.Ledger.Crypto (PubKeyHash(..))
+import Schema (ToSchema(..), FormSchema(..))
 
 -- | Class that converts to inlinable builtin string
 class Showt a where
   showt :: a -> String
+
+-- instance ToSchema (R.Ratio Integer) where
+  -- toSchema = FormSchemaArray (toSchema @Integer)
+
+-- deriving anyclass instance ToSchema AssetClass
+-- deriving anyclass instance ToSchema Coin
 
 -- | Address of the wallet that can hold values of assets
 data UserId
   = UserId PubKeyHash  -- user address
   | Self               -- addres of the lending platform
   deriving stock (Show, Generic, Hask.Eq, Hask.Ord)
+  -- deriving anyclass (FromJSON, ToJSON, ToSchema)
   deriving anyclass (FromJSON, ToJSON)
 
 instance Eq UserId where
@@ -87,6 +94,7 @@ data LendingPool = LendingPool
   , lp'healthReport :: !HealthReport           -- ^ map of unhealthy borrows
   }
   deriving (Show, Generic)
+  -- deriving anyclass (FromJSON, ToJSON, ToSchema)
   deriving anyclass (FromJSON, ToJSON)
 
 -- | Reserve of give coin in the pool.
@@ -100,6 +108,7 @@ data Reserve = Reserve
   , reserve'interest             :: !ReserveInterest -- ^ reserve liquidity params
   }
   deriving (Show, Generic)
+  -- deriving anyclass (FromJSON, ToJSON, ToSchema)
   deriving anyclass (FromJSON, ToJSON)
 
 type HealthReport = Map BadBorrow Rational
@@ -111,7 +120,8 @@ data BadBorrow = BadBorrow
   , badBorrow'asset  :: !Coin     -- ^ asset of the borrow
   }
   deriving stock (Show, Generic, Hask.Eq)
-  deriving anyclass (ToJSON, FromJSON)
+  -- deriving anyclass (FromJSON, ToJSON, ToSchema)
+  deriving anyclass (FromJSON, ToJSON)
 
 instance Eq BadBorrow where
   {-# INLINABLE (==) #-}
@@ -123,6 +133,7 @@ data CoinRate = CoinRate
   , coinRate'lastUpdateTime :: !Integer  -- ^ last time price was updated
   }
   deriving (Show, Generic)
+  -- deriving anyclass (FromJSON, ToJSON, ToSchema)
   deriving anyclass (FromJSON, ToJSON)
 
 -- | Parameters for calculation of interest rates.
@@ -134,6 +145,7 @@ data ReserveInterest = ReserveInterest
   , ri'lastUpdateTime     :: !Integer
   }
   deriving (Show, Generic)
+  -- deriving anyclass (FromJSON, ToJSON, ToSchema)
   deriving anyclass (FromJSON, ToJSON)
 
 data InterestModel = InterestModel
@@ -143,6 +155,7 @@ data InterestModel = InterestModel
   , im'base                :: !Rational
   }
   deriving (Show, Generic, Hask.Eq)
+  -- deriving anyclass (FromJSON, ToJSON, ToSchema)
   deriving anyclass (FromJSON, ToJSON)
 
 defaultInterestModel :: InterestModel
@@ -162,6 +175,7 @@ data CoinCfg = CoinCfg
   , coinCfg'liquidationBonus :: Rational
   }
   deriving stock (Show, Generic, Hask.Eq)
+  -- deriving anyclass (FromJSON, ToJSON, ToSchema)
   deriving anyclass (FromJSON, ToJSON)
 
 {-# INLINABLE initLendingPool #-}
@@ -217,6 +231,7 @@ data User = User
   , user'health          :: !Health
   }
   deriving (Show, Generic)
+  -- deriving anyclass (FromJSON, ToJSON, ToSchema)
   deriving anyclass (FromJSON, ToJSON)
 
 -- | Health ratio for user per borrow
@@ -241,6 +256,7 @@ data Wallet = Wallet
   , wallet'scaledBalance :: !Rational  -- ^ scaled balance
   }
   deriving (Show, Generic)
+  -- deriving anyclass (FromJSON, ToJSON, ToSchema)
   deriving anyclass (FromJSON, ToJSON)
 
 
@@ -261,6 +277,7 @@ data Act
       }                              -- ^ price oracle's actions
   | GovernAct GovernAct              -- ^ app admin's actions
   deriving stock (Show, Generic, Hask.Eq)
+  -- deriving anyclass (FromJSON, ToJSON, ToSchema)
   deriving anyclass (FromJSON, ToJSON)
 
 -- | Lending pool action
@@ -311,12 +328,17 @@ data UserAct
   -- ^ call to liquidate borrows that are unsafe due to health check
   -- (see <https://docs.aave.com/faq/liquidations> for description)
   deriving stock (Show, Generic, Hask.Eq)
+  -- deriving anyclass (FromJSON, ToJSON, ToSchema) 
   deriving anyclass (FromJSON, ToJSON)
+
+instance ToSchema UserAct where
+  toSchema = undefined
 
 -- | Acts that can be done by admin users.
 data GovernAct
   = AddReserve CoinCfg  -- ^ Adds new reserve
   deriving stock (Show, Generic, Hask.Eq)
+  -- deriving anyclass (FromJSON, ToJSON, ToSchema)
   deriving anyclass (FromJSON, ToJSON)
 
 -- | Updates for the prices of the currencies on the markets
@@ -324,6 +346,7 @@ data PriceAct
   = SetAssetPrice Coin Rational   -- ^ Set asset price
   | SetOracleAddr Coin UserId     -- ^ Provide address of the oracle
   deriving stock (Show, Generic, Hask.Eq)
+  -- deriving anyclass (FromJSON, ToJSON, ToSchema)
   deriving anyclass (FromJSON, ToJSON)
 
 -- | Custom currency
@@ -361,7 +384,8 @@ data InterestRateStrategy = InterestRateStrategy
 
 data InterestRate = StableRate | VariableRate
   deriving stock (Show, Generic, Hask.Eq)
-  deriving anyclass (FromJSON, ToJSON)
+  deriving anyclass (FromJSON, ToJSON, ToSchema)
+  -- deriving anyclass (FromJSON, ToJSON)
 
 ---------------------------------------------------------------
 -- boilerplate instances

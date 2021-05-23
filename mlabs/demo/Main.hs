@@ -15,6 +15,7 @@ import Control.Monad.Freer.Error (Error, throwError)
 import Control.Monad.Freer.Extras.Log (LogMsg, logDebug)
 import Control.Monad.IO.Class (MonadIO (..))
 import Data.Aeson (FromJSON, Result (..), ToJSON, encode, fromJSON)
+import qualified Data.Aeson as Aeson
 import Data.Bifunctor (Bifunctor (first))
 import Data.Default.Class
 import Data.Map (Map)
@@ -65,6 +66,7 @@ import qualified Mlabs.Lending.Logic.Types as Lendex
 import Mlabs.Lending.Logic.Types (Coin, UserAct(..), UserId(..))
 --------------------------------------------------------------------------------
 
+import Debug.Trace (traceM)
 
 main :: IO ()
 main = void $
@@ -75,12 +77,15 @@ main = void $
 
     -- The initial spend is enough to identify the entire market, provided the initial params are also clear.
     -- TODO: get pool info here.
-    _ <- flip Simulator.waitForState cidInit $ \json -> case fromJSON json of
-      Success (Just (Semigroup.Last mkt)) -> Just mkt
+    someJSON <- flip Simulator.waitForState cidInit $ \json -> case fromJSON json of
+      Success (someJson :: Aeson.Value) -> Just someJson
       _ -> Nothing
+    traceM $ "result:"
+    traceM $ show someJSON
 
 
     shutdown
+
 
 data AavePAB
 
@@ -110,10 +115,10 @@ handleLendexContract = Builtin.handleBuiltin getSchema getContract
   where
     getSchema = \case
       Init -> Builtin.endpointsToSchemas @Empty
-      User _ -> Builtin.endpointsToSchemas @Lendex.UserLendexSchema
+      User _ -> Builtin.endpointsToSchemas @Lendex.UserLendexSchemaOnly
     getContract = \case
       Init -> SomeBuiltin (Lendex.startLendex startParams)
-      User lendex -> SomeBuiltin (Lendex.userAction depositAct)
+      User _ -> SomeBuiltin (Lendex.userAction depositAct)
 
 handlers :: SimulatorEffectHandlers (Builtin AaveContracts)
 handlers =

@@ -5,7 +5,7 @@ module Mlabs.Lending.Contract.Lendex(
   , mkValidator
   , scriptInstance
   -- * Endpoints
-  , UserLendexSchema, UserApp
+  , UserLendexSchema, UserLendexSchemaOnly, UserApp
   , userEndpoints
   , PriceOracleLendexSchema, PriceOracleApp
   , priceOracleEndpoints
@@ -50,11 +50,14 @@ import qualified Mlabs.Lending.Contract.Forge as Forge
 import Mlabs.Lending.Contract.Utils
 
 import Plutus.Trace.Emulator (EmulatorTrace, callEndpoint, activateContractWallet)
+import qualified Plutus.Contract as Contract 
+import qualified Data.Semigroup as Semigroup
 import qualified Wallet.Emulator as Emulator
 
 import qualified Data.Map as M
 -- import Data.Text.Prettyprint.Doc.Extras
 
+import Debug.Trace (traceM)
 
 type Lendex = SM.StateMachine LendingPool Act
 
@@ -115,7 +118,10 @@ type LendexError = SM.SMContractError
 
 type UserLendexSchema =
   BlockchainActions
-    .\/ Endpoint "user-action" UserAct
+    .\/ UserLendexSchemaOnly
+
+type UserLendexSchemaOnly =
+    Endpoint "user-action" UserAct
 
 type UserApp a = Contract () UserLendexSchema LendexError a
 
@@ -178,7 +184,7 @@ data StartParams = StartParams
   deriving stock (Show, Generic)
   deriving anyclass (FromJSON, ToJSON)
 
-type GovernApp a = Contract () GovernLendexSchema LendexError a
+type GovernApp a = Contract (Maybe (Semigroup.Last LendingPool)) GovernLendexSchema LendexError a
 
 governAction :: GovernAct -> GovernApp ()
 governAction act = do
@@ -186,7 +192,10 @@ governAction act = do
 
 startLendex :: StartParams -> GovernApp ()
 startLendex StartParams{..} = do
-  void $ SM.runInitialise client (initLendingPool Forge.currencySymbol sp'coins) sp'initValue
+  lp <- SM.runInitialise client (initLendingPool Forge.currencySymbol sp'coins) sp'initValue
+  traceM $ show lp
+  Contract.tell . Just . Semigroup.Last $ lp
+  return ()
 
 -- | Endpoints for admin user
 governEndpoints :: GovernApp ()
