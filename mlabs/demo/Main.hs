@@ -17,7 +17,9 @@ import Control.Monad.IO.Class (MonadIO (..))
 import Data.Aeson (FromJSON, Result (..), ToJSON, encode, fromJSON)
 import qualified Data.Aeson as Aeson
 import Data.Bifunctor (Bifunctor (first))
+import Data.ByteString.Char8 qualified as Char8
 import Data.Default.Class
+import Data.List (intercalate)
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Row (type Empty, type (.\\))
@@ -53,7 +55,8 @@ import Plutus.V1.Ledger.Ada qualified as Ada
 import Plutus.V1.Ledger.Crypto qualified as Ledger
 import Plutus.V1.Ledger.Slot qualified as Ledger (Slot (..))
 import Plutus.V1.Ledger.Value qualified as Ledger
-import Plutus.V1.Ledger.Value qualified as Value
+import Plutus.V1.Ledger.Value qualified as Value 
+import PlutusTx.AssocMap qualified as AssocMap
 import PlutusTx.Prelude qualified as PlutusTx
 import PlutusTx.Prelude ((%))
 import Wallet.Emulator.Types (Wallet (..), walletPubKey)
@@ -68,8 +71,36 @@ import Mlabs.Lending.Logic.Types (Coin, UserAct(..), UserId(..))
 
 import Debug.Trace (traceM)
 
+logStr :: String -> Simulation (Builtin AaveContracts) ()
+logStr s = Simulator.logString @(Builtin AaveContracts) s
+
+logStrPadded :: String -> Simulation (Builtin AaveContracts) ()
+logStrPadded s = logStr $ "\n\n" ++ s ++ "\n\n"
+
 logShow :: Show a => a -> Simulation (Builtin AaveContracts) ()
-logShow = Simulator.logString @(Builtin AaveContracts) . show
+logShow = logStr . show
+
+formatValue :: String -> Value.Value -> String
+formatValue heading (Value.Value m) = 
+  divider ++
+  heading ++ "\n" ++
+  divider ++
+  intercalate "\n" (tokenMapToList m) ++ "\n" ++
+  divider
+
+tokenMapToList :: AssocMap.Map Value.CurrencySymbol (AssocMap.Map Value.TokenName Integer) -> [String]
+tokenMapToList m = prettyShow <$> AssocMap.toList m
+  where
+    prettyShow (_, v) = formatFirst $ AssocMap.toList v
+    formatFirst [] = "\n"
+    formatFirst tokens = formatTokenValue $ head $ tokens
+    formatTokenValue (name, value) =
+      case name of
+        "" -> "Ada    " ++ (show value)
+        (Value.TokenName n) -> (Char8.unpack n) ++ "   " ++ (show value)
+
+divider :: String 
+divider = "-----------------------------------------------------------" ++ "\n"
 
 main :: IO ()
 main = void $
@@ -113,40 +144,54 @@ main = void $
     -- wallet 3 withdraws 100 ada
 
 
-    _ <- Simulator.waitNSlots 20
-    maybErr <- Simulator.callEndpointOnInstance cId2 "user-action" (depositAct 100)
-    logShow $ maybErr
+    _ <- Simulator.waitNSlots 19
+    _ <- Simulator.callEndpointOnInstance cId2 "user-action" (depositAct 100)
+    _ <- Simulator.waitNSlots 1
+    logStrPadded "Wallet 2 called 'deposit' with 100 Ada"
+    logStrPadded . formatValue "WALLET 2 BALANCE" =<< Simulator.valueAt (Wallet.walletAddress (Wallet 2))
 
 -- begin wallet 3 logging balances
-    logShow =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
-    _ <- Simulator.waitNSlots 20
+    _ <- Simulator.waitNSlots 19
     _ <- Simulator.callEndpointOnInstance cId3 "user-action" (depositAct 100)
+    _ <- Simulator.waitNSlots 1
+    logStrPadded "Wallet 3 called 'deposit' with 100 Ada"
+    logStrPadded . formatValue "WALLET 3 BALANCE" =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
 
-    logShow =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
-    _ <- Simulator.waitNSlots 20
+    _ <- Simulator.waitNSlots 19
     _ <- Simulator.callEndpointOnInstance cId3 "user-action" (depositAct 100)
+    _ <- Simulator.waitNSlots 1
+    logStrPadded "Wallet 3 called 'deposit' with 100 Ada"
+    logStrPadded . formatValue "WALLET 3 BALANCE" =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
    
-    logShow =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
-    _ <- Simulator.waitNSlots 20
+    _ <- Simulator.waitNSlots 19
     _ <- Simulator.callEndpointOnInstance cId3 "user-action" (collateralize)
+    _ <- Simulator.waitNSlots 1
+    logStrPadded "Wallet 3 called 'collateralize'"
+    logStrPadded . formatValue "WALLET 3 BALANCE" =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
 
-    logShow =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
-    _ <- Simulator.waitNSlots 20
+    _ <- Simulator.waitNSlots 19
     _ <- Simulator.callEndpointOnInstance cId3 "user-action" (borrow 70)
+    _ <- Simulator.waitNSlots 1
+    logStrPadded "Wallet 3 called 'borrow' with 70 Ada"
+    logStrPadded . formatValue "WALLET 3 BALANCE" =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
 
-    logShow =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
-    _ <- Simulator.waitNSlots 20
+    _ <- Simulator.waitNSlots 19
     _ <- Simulator.callEndpointOnInstance cId3 "user-action" (repay 90)
+    _ <- Simulator.waitNSlots 1
+    logStrPadded "Wallet 3 called 'repay' with 90 Ada"
+    logStrPadded . formatValue "WALLET 3 BALANCE" =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
 
-    logShow =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
-    _ <- Simulator.waitNSlots 20
+    _ <- Simulator.waitNSlots 19
     _ <- Simulator.callEndpointOnInstance cId3 "user-action" (decollateralize)
+    _ <- Simulator.waitNSlots 1
+    logStrPadded "Wallet 3 called 'decollateralize'"
+    logStrPadded . formatValue "WALLET 3 BALANCE" =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
 
-    logShow =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
-    _ <- Simulator.waitNSlots 20
+    _ <- Simulator.waitNSlots 19
     _ <- Simulator.callEndpointOnInstance cId3 "user-action" (withdraw 100)
-
-    logShow =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
+    _ <- Simulator.waitNSlots 1
+    logStrPadded "Wallet 3 called 'withdraw' with 100 Ada"
+    logStrPadded . formatValue "WALLET 3 BALANCE" =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
 
     _ <- forever $ do
       liftIO $ print @String "---------------------------------------------  -> UPDATED BALANCES:"
