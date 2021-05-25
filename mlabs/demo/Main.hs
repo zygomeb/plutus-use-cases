@@ -93,8 +93,8 @@ tokenMapToList m = prettyShow <$> AssocMap.toList m
     formatFirst tokens = formatTokenValue $ head $ tokens
     formatTokenValue (name, value) =
       case name of
-        "" -> "Ada    " ++ (show value)
-        (Value.TokenName n) -> (Char8.unpack n) ++ "   " ++ (show value)
+        "" -> (padRight ' ' 7 "Ada") ++ (show value)
+        (Value.TokenName n) -> (padRight ' ' 7 $ Char8.unpack n) ++ (show value)
 
 
 main :: IO ()
