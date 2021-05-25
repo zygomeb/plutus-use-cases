@@ -68,10 +68,8 @@ import qualified Mlabs.Lending.Contract.Lendex as Lendex
 import qualified Mlabs.Lending.Logic.Types as Lendex
 import Mlabs.Lending.Logic.Types (Coin, UserAct(..), UserId(..))
 import PrettyLogger
---------------------------------------------------------------------------------
 
-logShow :: Show a => a -> Simulation (Builtin AaveContracts) ()
-logShow = Simulator.logString @(Builtin AaveContracts) . show
+--------------------------------------------------------------------------------
 
 logAction :: MonadIO m => String -> m ()
 logAction str = logPrettyColorBold (Vibrant Green) (withNewLines $ str)
