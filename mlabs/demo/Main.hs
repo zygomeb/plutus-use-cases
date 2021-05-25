@@ -67,26 +67,25 @@ import Wallet.Emulator.Wallet qualified as Wallet
 import qualified Mlabs.Lending.Contract.Lendex as Lendex
 import qualified Mlabs.Lending.Logic.Types as Lendex
 import Mlabs.Lending.Logic.Types (Coin, UserAct(..), UserId(..))
+import PrettyLogger
 --------------------------------------------------------------------------------
 
-import Debug.Trace (traceM)
-
-logStr :: String -> Simulation (Builtin AaveContracts) ()
-logStr s = Simulator.logString @(Builtin AaveContracts) s
-
-logStrPadded :: String -> Simulation (Builtin AaveContracts) ()
-logStrPadded s = logStr $ "\n\n" ++ s ++ "\n\n"
-
 logShow :: Show a => a -> Simulation (Builtin AaveContracts) ()
-logShow = logStr . show
+logShow = Simulator.logString @(Builtin AaveContracts) . show
 
-formatValue :: String -> Value.Value -> String
-formatValue heading (Value.Value m) = 
-  divider ++
-  heading ++ "\n" ++
-  divider ++
-  intercalate "\n" (tokenMapToList m) ++ "\n" ++
-  divider
+logAction :: MonadIO m => String -> m ()
+logAction str = logPrettyColorBold (Vibrant Green) (withNewLines $ str)
+
+logBalance :: MonadIO m => String -> Value.Value -> m ()
+logBalance wallet val = do
+  logNewLine
+  logPrettyBgColor 40 (Vibrant Cyan) (Standard Black) (wallet ++ " BALANCE")
+  logNewLine
+  logPrettyColor (Vibrant Cyan) (formatValue val)
+  logNewLine
+
+formatValue :: Value.Value -> String
+formatValue (Value.Value m) = intercalate "\n" (tokenMapToList m)
 
 tokenMapToList :: AssocMap.Map Value.CurrencySymbol (AssocMap.Map Value.TokenName Integer) -> [String]
 tokenMapToList m = prettyShow <$> AssocMap.toList m
@@ -99,8 +98,6 @@ tokenMapToList m = prettyShow <$> AssocMap.toList m
         "" -> "Ada    " ++ (show value)
         (Value.TokenName n) -> (Char8.unpack n) ++ "   " ++ (show value)
 
-divider :: String 
-divider = "-----------------------------------------------------------" ++ "\n"
 
 main :: IO ()
 main = void $
@@ -143,55 +140,70 @@ main = void $
     -- wallet 3 de-collateralizes 100 aAda
     -- wallet 3 withdraws 100 ada
 
+    let logBalance2 = logBalance "WALLET 2"
+    let logBalance3 = logBalance "WALLET 3"
 
-    _ <- Simulator.waitNSlots 19
+    _ <- Simulator.waitNSlots 2
+    logAction "Initial wallet balances"
+    logBalance2 =<< Simulator.valueAt (Wallet.walletAddress (Wallet 2))
+    logBalance3 =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
+    logNewLine
+    _ <- Simulator.waitNSlots 16
     _ <- Simulator.callEndpointOnInstance cId2 "user-action" (depositAct 100)
-    _ <- Simulator.waitNSlots 1
-    logStrPadded "Wallet 2 called 'deposit' with 100 Ada"
-    logStrPadded . formatValue "WALLET 2 BALANCE" =<< Simulator.valueAt (Wallet.walletAddress (Wallet 2))
+    _ <- Simulator.waitNSlots 2
+    logAction "Wallet 2 called 'deposit' with 100 Ada"
+    logBalance2 =<< Simulator.valueAt (Wallet.walletAddress (Wallet 2))
+    logNewLine
 
 -- begin wallet 3 logging balances
-    _ <- Simulator.waitNSlots 19
+    _ <- Simulator.waitNSlots 18
     _ <- Simulator.callEndpointOnInstance cId3 "user-action" (depositAct 100)
-    _ <- Simulator.waitNSlots 1
-    logStrPadded "Wallet 3 called 'deposit' with 100 Ada"
-    logStrPadded . formatValue "WALLET 3 BALANCE" =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
+    _ <- Simulator.waitNSlots 2
+    logAction "Wallet 3 called 'deposit' with 100 Ada"
+    logBalance3 =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
+    logNewLine
 
-    _ <- Simulator.waitNSlots 19
+    _ <- Simulator.waitNSlots 18
     _ <- Simulator.callEndpointOnInstance cId3 "user-action" (depositAct 100)
-    _ <- Simulator.waitNSlots 1
-    logStrPadded "Wallet 3 called 'deposit' with 100 Ada"
-    logStrPadded . formatValue "WALLET 3 BALANCE" =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
+    _ <- Simulator.waitNSlots 2
+    logAction "Wallet 3 called 'deposit' with 100 Ada"
+    logBalance3 =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
+    logNewLine
    
-    _ <- Simulator.waitNSlots 19
+    _ <- Simulator.waitNSlots 18
     _ <- Simulator.callEndpointOnInstance cId3 "user-action" (collateralize)
-    _ <- Simulator.waitNSlots 1
-    logStrPadded "Wallet 3 called 'collateralize'"
-    logStrPadded . formatValue "WALLET 3 BALANCE" =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
+    _ <- Simulator.waitNSlots 2
+    logAction "Wallet 3 called 'collateralize'"
+    logBalance3 =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
+    logNewLine
 
-    _ <- Simulator.waitNSlots 19
+    _ <- Simulator.waitNSlots 18
     _ <- Simulator.callEndpointOnInstance cId3 "user-action" (borrow 70)
-    _ <- Simulator.waitNSlots 1
-    logStrPadded "Wallet 3 called 'borrow' with 70 Ada"
-    logStrPadded . formatValue "WALLET 3 BALANCE" =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
+    _ <- Simulator.waitNSlots 2
+    logAction "Wallet 3 called 'borrow' with 70 Ada"
+    logBalance3 =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
+    logNewLine
 
-    _ <- Simulator.waitNSlots 19
+    _ <- Simulator.waitNSlots 18
     _ <- Simulator.callEndpointOnInstance cId3 "user-action" (repay 90)
-    _ <- Simulator.waitNSlots 1
-    logStrPadded "Wallet 3 called 'repay' with 90 Ada"
-    logStrPadded . formatValue "WALLET 3 BALANCE" =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
+    _ <- Simulator.waitNSlots 2
+    logAction "Wallet 3 called 'repay' with 90 Ada"
+    logBalance3 =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
+    logNewLine
 
-    _ <- Simulator.waitNSlots 19
+    _ <- Simulator.waitNSlots 18
     _ <- Simulator.callEndpointOnInstance cId3 "user-action" (decollateralize)
-    _ <- Simulator.waitNSlots 1
-    logStrPadded "Wallet 3 called 'decollateralize'"
-    logStrPadded . formatValue "WALLET 3 BALANCE" =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
+    _ <- Simulator.waitNSlots 2
+    logAction "Wallet 3 called 'decollateralize'"
+    logBalance "WALLET 3" =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
+    logNewLine
 
-    _ <- Simulator.waitNSlots 19
+    _ <- Simulator.waitNSlots 18
     _ <- Simulator.callEndpointOnInstance cId3 "user-action" (withdraw 100)
-    _ <- Simulator.waitNSlots 1
-    logStrPadded "Wallet 3 called 'withdraw' with 100 Ada"
-    logStrPadded . formatValue "WALLET 3 BALANCE" =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
+    _ <- Simulator.waitNSlots 2
+    logAction "Wallet 3 called 'withdraw' with 100 Ada"
+    logBalance "WALLET 3" =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
+    logNewLine
 
     _ <- forever $ do
       liftIO $ print @String "---------------------------------------------  -> UPDATED BALANCES:"
