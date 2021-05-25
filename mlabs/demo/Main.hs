@@ -17,7 +17,9 @@ import Control.Monad.IO.Class (MonadIO (..))
 import Data.Aeson (FromJSON, Result (..), ToJSON, encode, fromJSON)
 import qualified Data.Aeson as Aeson
 import Data.Bifunctor (Bifunctor (first))
+import Data.ByteString.Char8 qualified as Char8
 import Data.Default.Class
+import Data.List (intercalate)
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Row (type Empty, type (.\\))
@@ -53,7 +55,8 @@ import Plutus.V1.Ledger.Ada qualified as Ada
 import Plutus.V1.Ledger.Crypto qualified as Ledger
 import Plutus.V1.Ledger.Slot qualified as Ledger (Slot (..))
 import Plutus.V1.Ledger.Value qualified as Ledger
-import Plutus.V1.Ledger.Value qualified as Value
+import Plutus.V1.Ledger.Value qualified as Value 
+import PlutusTx.AssocMap qualified as AssocMap
 import PlutusTx.Prelude qualified as PlutusTx
 import PlutusTx.Prelude ((%))
 import Wallet.Emulator.Types (Wallet (..), walletPubKey)
@@ -64,12 +67,35 @@ import Wallet.Emulator.Wallet qualified as Wallet
 import qualified Mlabs.Lending.Contract.Lendex as Lendex
 import qualified Mlabs.Lending.Logic.Types as Lendex
 import Mlabs.Lending.Logic.Types (Coin, UserAct(..), UserId(..))
+import PrettyLogger
+
 --------------------------------------------------------------------------------
 
-import Debug.Trace (traceM)
+logAction :: MonadIO m => String -> m ()
+logAction str = logPrettyColorBold (Vibrant Green) (withNewLines $ str)
 
-logShow :: Show a => a -> Simulation (Builtin AaveContracts) ()
-logShow = Simulator.logString @(Builtin AaveContracts) . show
+logBalance :: MonadIO m => String -> Value.Value -> m ()
+logBalance wallet val = do
+  logNewLine
+  logPrettyBgColor 40 (Vibrant Cyan) (Standard Black) (wallet ++ " BALANCE")
+  logNewLine
+  logPrettyColor (Vibrant Cyan) (formatValue val)
+  logNewLine
+
+formatValue :: Value.Value -> String
+formatValue (Value.Value m) = intercalate "\n" (tokenMapToList m)
+
+tokenMapToList :: AssocMap.Map Value.CurrencySymbol (AssocMap.Map Value.TokenName Integer) -> [String]
+tokenMapToList m = prettyShow <$> AssocMap.toList m
+  where
+    prettyShow (_, v) = formatFirst $ AssocMap.toList v
+    formatFirst [] = "\n"
+    formatFirst tokens = formatTokenValue $ head $ tokens
+    formatTokenValue (name, value) =
+      case name of
+        "" -> (padRight ' ' 7 "Ada") ++ (show value)
+        (Value.TokenName n) -> (padRight ' ' 7 $ Char8.unpack n) ++ (show value)
+
 
 main :: IO ()
 main = void $
@@ -112,41 +138,70 @@ main = void $
     -- wallet 3 de-collateralizes 100 aAda
     -- wallet 3 withdraws 100 ada
 
+    let logBalance2 = logBalance "WALLET 2"
+    let logBalance3 = logBalance "WALLET 3"
 
-    _ <- Simulator.waitNSlots 20
-    maybErr <- Simulator.callEndpointOnInstance cId2 "user-action" (depositAct 100)
-    logShow $ maybErr
+    _ <- Simulator.waitNSlots 2
+    logAction "Initial wallet balances"
+    logBalance2 =<< Simulator.valueAt (Wallet.walletAddress (Wallet 2))
+    logBalance3 =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
+    logNewLine
+    _ <- Simulator.waitNSlots 16
+    _ <- Simulator.callEndpointOnInstance cId2 "user-action" (depositAct 100)
+    _ <- Simulator.waitNSlots 2
+    logAction "Wallet 2 called 'deposit' with 100 Ada"
+    logBalance2 =<< Simulator.valueAt (Wallet.walletAddress (Wallet 2))
+    logNewLine
 
 -- begin wallet 3 logging balances
-    logShow =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
-    _ <- Simulator.waitNSlots 20
+    _ <- Simulator.waitNSlots 18
     _ <- Simulator.callEndpointOnInstance cId3 "user-action" (depositAct 100)
+    _ <- Simulator.waitNSlots 2
+    logAction "Wallet 3 called 'deposit' with 100 Ada"
+    logBalance3 =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
+    logNewLine
 
-    logShow =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
-    _ <- Simulator.waitNSlots 20
+    _ <- Simulator.waitNSlots 18
     _ <- Simulator.callEndpointOnInstance cId3 "user-action" (depositAct 100)
+    _ <- Simulator.waitNSlots 2
+    logAction "Wallet 3 called 'deposit' with 100 Ada"
+    logBalance3 =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
+    logNewLine
    
-    logShow =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
-    _ <- Simulator.waitNSlots 20
+    _ <- Simulator.waitNSlots 18
     _ <- Simulator.callEndpointOnInstance cId3 "user-action" (collateralize)
+    _ <- Simulator.waitNSlots 2
+    logAction "Wallet 3 called 'collateralize'"
+    logBalance3 =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
+    logNewLine
 
-    logShow =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
-    _ <- Simulator.waitNSlots 20
+    _ <- Simulator.waitNSlots 18
     _ <- Simulator.callEndpointOnInstance cId3 "user-action" (borrow 70)
+    _ <- Simulator.waitNSlots 2
+    logAction "Wallet 3 called 'borrow' with 70 Ada"
+    logBalance3 =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
+    logNewLine
 
-    logShow =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
-    _ <- Simulator.waitNSlots 20
+    _ <- Simulator.waitNSlots 18
     _ <- Simulator.callEndpointOnInstance cId3 "user-action" (repay 90)
+    _ <- Simulator.waitNSlots 2
+    logAction "Wallet 3 called 'repay' with 90 Ada"
+    logBalance3 =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
+    logNewLine
 
-    logShow =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
-    _ <- Simulator.waitNSlots 20
+    _ <- Simulator.waitNSlots 18
     _ <- Simulator.callEndpointOnInstance cId3 "user-action" (decollateralize)
+    _ <- Simulator.waitNSlots 2
+    logAction "Wallet 3 called 'decollateralize'"
+    logBalance "WALLET 3" =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
+    logNewLine
 
-    logShow =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
-    _ <- Simulator.waitNSlots 20
+    _ <- Simulator.waitNSlots 18
     _ <- Simulator.callEndpointOnInstance cId3 "user-action" (withdraw 100)
-
-    logShow =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
+    _ <- Simulator.waitNSlots 2
+    logAction "Wallet 3 called 'withdraw' with 100 Ada"
+    logBalance "WALLET 3" =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
+    logNewLine
 
     _ <- forever $ do
       liftIO $ print @String "---------------------------------------------  -> UPDATED BALANCES:"
