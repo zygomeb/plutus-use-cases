@@ -96,6 +96,11 @@ tokenMapToList m = prettyShow <$> AssocMap.toList m
         "" -> (padRight ' ' 7 "Ada") ++ (show value)
         (Value.TokenName n) -> (padRight ' ' 7 $ Char8.unpack n) ++ (show value)
 
+logAsciiLogo :: MonadIO m => LogColor -> String -> m ()
+logAsciiLogo color logo = do 
+  logNewLine
+  logPrettyBgColor 40 color (Standard Black) logo
+  logNewLine
 
 main :: IO ()
 main = void $
@@ -136,7 +141,8 @@ main = void $
     -- wallet 3 borrows 70 ada
     -- wallet 3 repays the borrow
     -- wallet 3 de-collateralizes 100 aAda
-    -- wallet 3 withdraws 100 ada
+    -- wallet 3 withdraws 100 aAda
+    liftIO $ logAsciiLogo (Vibrant Red) mlabs
 
     let logBalance2 = logBalance "WALLET 2"
     let logBalance3 = logBalance "WALLET 3"
@@ -199,7 +205,7 @@ main = void $
     _ <- Simulator.waitNSlots 18
     _ <- Simulator.callEndpointOnInstance cId3 "user-action" (withdraw 100)
     _ <- Simulator.waitNSlots 2
-    logAction "Wallet 3 called 'withdraw' with 100 Ada"
+    logAction "Wallet 3 called 'withdraw' with 100 aAda"
     logBalance "WALLET 3" =<< Simulator.valueAt (Wallet.walletAddress (Wallet 3))
     logNewLine
 
@@ -210,6 +216,16 @@ main = void $
       pure () 
 -- we can add a demo that does liquidation later
     shutdown
+
+mlabs :: String
+mlabs = 
+  "                                                                           \n\
+  \ ███╗   ███╗    ██╗      █████╗ ██████╗ ███████╗ \n\
+  \ ████╗ ████║    ██║     ██╔══██╗██╔══██╗██╔════╝ \n\
+  \ ██╔████╔██║    ██║     ███████║██████╔╝███████╗ \n\
+  \ ██║╚██╔╝██║    ██║     ██╔══██║██╔══██╗╚════██║ \n\
+  \ ██║ ╚═╝ ██║    ███████╗██║  ██║██████╔╝███████║ \n\
+  \ ╚═╝     ╚═╝    ╚══════╝╚═╝  ╚═╝╚═════╝ ╚══════╝ "
 
 data AavePAB
 
