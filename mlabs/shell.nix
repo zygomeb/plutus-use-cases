@@ -32,6 +32,7 @@ with import ./nix { };
       haskellPackages.fourmolu
       git
       ghc
+      ghcid
       nixfmt
       plutus.plutus.haskell-language-server
 
