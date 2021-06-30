@@ -10,14 +10,14 @@ import Bootstrap as BS
 import Config (pabConfig)
 import Data.Argonaut as A
 import Data.Argonaut.Encode (encodeJson)
-import Data.Array ((..))
+import Data.Array ((..), head)
 import Data.Either (Either(..))
 import Data.Json.JsonTuple (JsonTuple(..))
 import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Tuple (Tuple(..))
 import Data.Tuple.Nested ((/\))
-import Debug.Trace (trace, traceM)
+import Debug.Trace (trace, traceM, spy)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Console (log, logShow)
 import Halogen (HalogenQ(..))
@@ -103,9 +103,20 @@ handleAction action = case action of
     let endpoint = schema.endpointDescription.getEndpointDescription
     let payload = fromMaybe A.jsonEmptyObject $ formArgumentToJson state.argument 
 
-    cid <- H.liftAff $ Api.activateContract pabConfig csr.csrDefinition selectedWalletId
-    _ <- H.liftAff $ Api.postEndpoint pabConfig cid endpoint payload
-    pure unit
+    cids <- H.liftAff $ Api.getWalletInstances pabConfig { getWallet: selectedWalletId }
+    -- TODO: dynamically find the 'correct' contract? match endpoint names?
+    let mCid = (_.cicContract) <$> head cids
+    _ <- pure $ spy "cid" mCid
+    _ <- pure $ spy "payload" payload
+    _ <- pure $ spy "endpoint" endpoint
+
+    -- cid <- H.liftAff $ Api.activateContract pabConfig csr.csrDefinition selectedWalletId
+    case mCid of
+      Nothing -> traceM $ "no contract available"
+      Just cid -> do
+        result <- H.liftAff $ Api.postEndpoint pabConfig cid endpoint payload
+        _ <- pure $ spy "result" result
+        pure unit
   _ -> do
     state <- H.get
     let newArg = handleFormEvent defaultValue action state.argument

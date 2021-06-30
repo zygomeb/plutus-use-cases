@@ -17,6 +17,7 @@ import Mlabs.Lending.Contract.Api
 import Mlabs.Lending.Contract.Server
 
 import Plutus.Trace.Emulator (EmulatorTrace, throwError, callEndpoint, activateContractWallet, EmulatorRuntimeError(..))
+import Plutus.V1.Ledger.Value (unAssetClass)
 import qualified Wallet.Emulator as Emulator
 
 ---------------------------------------------------------
@@ -27,8 +28,8 @@ callUserAct :: LendexId -> Emulator.Wallet -> UserAct -> EmulatorTrace ()
 callUserAct lid wal act = do
   hdl <- activateContractWallet wal (userEndpoints lid)
   void $ case act of
-    DepositAct{..}                    -> callEndpoint' hdl $ Deposit act'amount act'asset
-    BorrowAct{..}                     -> callEndpoint' hdl $ Borrow  act'amount act'asset (toInterestRateFlag act'rate)
+    DepositAct{..}                    -> callEndpoint' hdl $ Deposit act'amount (unAssetClass act'asset)
+    BorrowAct{..}                     -> callEndpoint' hdl $ Borrow  act'amount (unAssetClass act'asset) (toInterestRateFlag act'rate)
     RepayAct{..}                      -> callEndpoint' hdl $ Repay   act'amount act'asset (toInterestRateFlag act'rate)
     SwapBorrowRateModelAct{..}        -> callEndpoint' hdl $ SwapBorrowRateModel act'asset (toInterestRateFlag act'rate)
     SetUserReserveAsCollateralAct{..} -> callEndpoint' hdl $ SetUserReserveAsCollateral act'asset act'useAsCollateral act'portion

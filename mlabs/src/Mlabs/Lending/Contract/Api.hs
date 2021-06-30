@@ -43,6 +43,9 @@ import Mlabs.Emulator.Types
 import Mlabs.Data.Ray (Ray)
 import Mlabs.Lending.Logic.Types
 
+import qualified Data.Aeson as Aeson
+import qualified Data.ByteString.Lazy as BSL
+
 -----------------------------------------------------------------------
 -- lending pool actions
 
@@ -51,19 +54,31 @@ import Mlabs.Lending.Logic.Types
 -- | Deposit funds to app
 data Deposit = Deposit
   { deposit'amount         :: Integer
-  , deposit'asset          :: Coin
+  , deposit'asset          :: (CurrencySymbol, TokenName)
   }
   deriving stock (Show, Generic, Hask.Eq)
   deriving anyclass (FromJSON, ToJSON, ToSchema)
 
+exampleDeposit :: Either String Deposit
+exampleDeposit = Aeson.eitherDecode "{\"deposit\'amount\":100,\"deposit\'asset\":[{\"unCurrencySymbol\":\"\"},{\"unTokenName\":\"\"}]}"
+
+exampleDeposit' :: BSL.ByteString
+exampleDeposit' = Aeson.encode $ Deposit 100 ("", "")
+
 -- | Borrow funds. We have to allocate collateral to be able to borrow
 data Borrow = Borrow
   { borrow'amount         :: Integer
-  , borrow'asset          :: Coin
+  , borrow'asset          :: (CurrencySymbol, TokenName)
   , borrow'rate           :: InterestRateFlag
   }
   deriving stock (Show, Generic, Hask.Eq)
   deriving anyclass (FromJSON, ToJSON, ToSchema)
+
+exampleBorrow :: Either String Borrow
+exampleBorrow = Aeson.eitherDecode undefined
+
+exampleBorrow' :: BSL.ByteString
+exampleBorrow' = Aeson.encode $ Borrow 80 ("","") (InterestRateFlag 2)
 
 -- | Repay part of the borrow
 data Repay = Repay
@@ -199,8 +214,8 @@ class IsEndpoint a => IsGovernAct a where
 
 -- user acts
 
-instance IsUserAct Deposit                    where { toUserAct Deposit{..} = DepositAct deposit'amount deposit'asset }
-instance IsUserAct Borrow                     where { toUserAct Borrow{..} = BorrowAct borrow'amount borrow'asset (fromInterestRateFlag borrow'rate) }
+instance IsUserAct Deposit                    where { toUserAct Deposit{..} = DepositAct deposit'amount (AssetClass deposit'asset) }
+instance IsUserAct Borrow                     where { toUserAct Borrow{..} = BorrowAct borrow'amount (AssetClass borrow'asset) (fromInterestRateFlag borrow'rate) }
 instance IsUserAct Repay                      where { toUserAct Repay{..} = RepayAct repay'amount repay'asset (fromInterestRateFlag repay'rate) }
 instance IsUserAct SwapBorrowRateModel        where { toUserAct SwapBorrowRateModel{..} = SwapBorrowRateModelAct swapRate'asset (fromInterestRateFlag swapRate'rate) }
 instance IsUserAct SetUserReserveAsCollateral where { toUserAct SetUserReserveAsCollateral{..} = SetUserReserveAsCollateralAct setCollateral'asset setCollateral'useAsCollateral setCollateral'portion }

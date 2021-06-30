@@ -3,7 +3,7 @@ module Main where
 
 import Prelude
 
-import Control.Monad (when)
+import Control.Monad (when, forever)
 
 import Control.Monad.IO.Class
 import Data.Functor
@@ -36,53 +36,58 @@ import Mlabs.System.Console.Utils
 -- | Console demo for Lendex with simulator
 main :: IO ()
 main = runSimulator lendexId initContract $ do
-  cur    <- activateInit wAdmin
-  Simulator.waitNSlots 10
+  -- cur    <- activateInit wAdmin
+  -- Simulator.waitNSlots 10
   admin  <- activateAdmin wAdmin
   oracle <- activateOracle wAdmin
-  users  <- mapM activateUser wallets
+  users  <- activateUser (Wallet 1)
 
-  let [user1, user2, user3] = users
-      [coin1, coin2, coin3] = fmap (toCoin cur) [token1, token2, token3]
+  -- let [user1, user2, user3] = users
+      -- [coin1, coin2, coin3] = fmap (toCoin cur) [token1, token2, token3]
 
-  call admin $ startParams cur
-  next
+  call admin $ startParams --cur
+  -- next
 
   logMlabs
-  test "Init users" (pure ())
+  liftIO $ print users
+  forever $ do
+    void $ Simulator.waitNSlots 10
+    printBalance 1
 
-  test (unlines [ "Users deposit funds (100 coins in each currrency)."
-                , "They receive equal amount of aTokens."]
-       ) $ do
-    call user1 $ Deposit 100 coin1
-    call user2 $ Deposit 100 coin2
-    call user3 $ Deposit 100 coin3
+  -- test "Init users" (pure ())
 
-  test "User 1 borrows 60 Euros" $ do
-    call user1 $ SetUserReserveAsCollateral
-                  { setCollateral'asset           = coin1
-                  , setCollateral'useAsCollateral = True
-                  , setCollateral'portion         = 1 R.% 1
-                  }
-    call user1 $ Borrow 60 coin2 (toInterestRateFlag StableRate)
+  -- test (unlines [ "Users deposit funds (100 coins in each currrency)."
+                -- , "They receive equal amount of aTokens."]
+       -- ) $ do
+    -- call user1 $ Deposit 100 coin1
+    -- call user2 $ Deposit 100 coin2
+    -- call user3 $ Deposit 100 coin3
 
-  test "User 3 withdraws 25 Liras" $ do
-    call user3 $ Withdraw 25 coin3
+  -- test "User 1 borrows 60 Euros" $ do
+    -- call user1 $ SetUserReserveAsCollateral
+                  -- { setCollateral'asset           = coin1
+                  -- , setCollateral'useAsCollateral = True
+                  -- , setCollateral'portion         = 1 R.% 1
+                  -- }
+    -- call user1 $ Borrow 60 coin2 (toInterestRateFlag StableRate)
 
-  test (unlines [ "Rate of Euros becomes high and User1's collateral is not enough."
-                , "User2 liquidates part of the borrow"]
-       ) $ do
-    call oracle $ SetAssetPrice coin2 (R.fromInteger 2)
-    call user2 $ LiquidationCall
-                  { liquidationCall'collateral     = coin1
-                  , liquidationCall'debtUser       = (toPubKeyHash w1)
-                  , liquidationCall'debtAsset      = coin2
-                  , liquidationCall'debtToCover    = 10
-                  , liquidationCall'receiveAToken  = True
-                  }
+  -- test "User 3 withdraws 25 Liras" $ do
+    -- call user3 $ Withdraw 25 coin3
 
-  test "User 1 repays 20 coins of the loan" $ do
-    call user1 $ Repay 20 coin1 (toInterestRateFlag StableRate)
+  -- test (unlines [ "Rate of Euros becomes high and User1's collateral is not enough."
+                -- , "User2 liquidates part of the borrow"]
+       -- ) $ do
+    -- call oracle $ SetAssetPrice coin2 (R.fromInteger 2)
+    -- call user2 $ LiquidationCall
+                  -- { liquidationCall'collateral     = coin1
+                  -- , liquidationCall'debtUser       = (toPubKeyHash w1)
+                  -- , liquidationCall'debtAsset      = coin2
+                  -- , liquidationCall'debtToCover    = 10
+                  -- , liquidationCall'receiveAToken  = True
+                  -- }
+
+  -- test "User 1 repays 20 coins of the loan" $ do
+    -- call user1 $ Repay 20 coin1 (toInterestRateFlag StableRate)
 
   liftIO $ putStrLn "Fin (Press enter to Exit)"
   where
@@ -173,8 +178,8 @@ aToken2 = Value.tokenName "aEuro"
 aToken3 = Value.tokenName "aLira"
 aAda    = Value.tokenName "aAda"
 
-startParams :: CurrencySymbol -> StartParams
-startParams cur = StartParams
+startParams :: StartParams
+startParams = StartParams
   { sp'coins = fmap (\(coin, aCoin) -> CoinCfg
                                         { coinCfg'coin = coin
                                         , coinCfg'rate = R.fromInteger 1
@@ -182,7 +187,7 @@ startParams cur = StartParams
                                         , coinCfg'interestModel = defaultInterestModel
                                         , coinCfg'liquidationBonus = 5 R.% 100
                                         })
-        [(adaCoin, aAda), (toCoin cur token1, aToken1), (toCoin cur token2, aToken2), (toCoin cur token3, aToken3)]
+        [(adaCoin, aAda)]  -- , (toCoin cur token1, aToken1), (toCoin cur token2, aToken2), (toCoin cur token3, aToken3)]
   , sp'initValue = Value.assetClassValue adaCoin 1000
   , sp'admins    = [toPubKeyHash wAdmin]
   , sp'oracles   = [toPubKeyHash wAdmin]

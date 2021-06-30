@@ -48,6 +48,8 @@ actionArgumentField :: forall p. Array String -> Boolean -> FormArgument -> HH.H
 actionArgumentField ancestors isNested (Fix (FormObjectF subFields)) =
   HH.div [ HP.classes $ defaultClasses isNested ]
     (mapWithIndex (\i (JsonTuple field) -> subForm i field) subFields)
+    -- for some reason adding this change back makes our JSON Form Argument Empty
+        -- (mapWithIndex (\i (JsonTuple field) -> map (SetSubField i) (subForm field)) subFields)
  where
   subForm index (name /\ arg) =
     ( BS.formGroup_

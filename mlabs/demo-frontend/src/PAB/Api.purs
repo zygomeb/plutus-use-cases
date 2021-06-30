@@ -17,13 +17,13 @@ import Data.Either (Either(..))
 import Data.Eq ((/=))
 import Data.Maybe (Maybe(..))
 import Data.Time.Duration (Milliseconds(..))
-import Debug.Trace (trace)
+import Debug.Trace (trace, traceM, spy)
 import Effect.Aff (Aff, delay)
 import Effect.Class (liftEffect)
 import Effect.Class.Console (log, logShow)
 import Error (throwRequestError, throwDecodeError)
 import PAB.Types (ContractInstanceClientState, ContractInstanceId(..), ContractSignatureResponse, PabConfig, Wallet(..))
-import Prelude (bind, pure, show, ($), (<>))
+import Prelude (bind, pure, show, ($), (<>), discard)
 
 --------------------------------------------------------------------------------
 contractInstPath :: String
@@ -135,7 +135,11 @@ postJson ::
   payload ->
   Aff res
 postJson url payload = do
+  traceM "posting"
+  traceM url
+  _ <- pure $ spy "payload" (A.stringify $ A.encodeJson payload)
   res <- AX.post AXRF.json url (Just $ AXRB.Json $ A.encodeJson payload)
+  _ <- pure $ spy "res" res
   handleResponse res $ "POST request to " <> url <> " failed: "
 
 handleResponse ::

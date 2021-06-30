@@ -391,14 +391,14 @@ newtype IterationID
 derive instance genericIterationID :: Generic IterationID _
 
 instance encodeJsonIterationID :: EncodeJson IterationID where
-  encodeJson a = genericEncodeJson a
+  encodeJson a = genericEncodeJsonWith unTaggedJsonEncoding a
 
 instance decodeJsonIterationID :: DecodeJson IterationID where
-  decodeJson a = genericDecodeJson a
+  decodeJson a = genericDecodeJsonWith unTaggedJsonEncoding a
 
 type ContractRequest v
-  = { rqID :: RequestID
-    , itID :: IterationID
+  = { rqID :: A.Json
+    , itID :: A.Json
     , rqRequest :: v
     }
 
@@ -495,4 +495,10 @@ taggedJsonEncoding
   = { tagKey: "tag"
     , valuesKey: "contents"
     , unwrapSingleArguments: true
+    }
+unTaggedJsonEncoding :: Encoding
+unTaggedJsonEncoding 
+  = { tagKey: "tag"
+    , valuesKey: "contents"
+    , unwrapSingleArguments: false
     }
