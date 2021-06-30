@@ -10,8 +10,10 @@ packages:
 
 extra-deps:
 - git: https://github.com/input-output-hk/plutus.git
-  commit: 62be7a2d6dff285ad72d5bc6f5f11991ffae888b
+  # commit: 62be7a2d6dff285ad72d5bc6f5f11991ffae888b
+  commit: cfaa1438d2b391e8294fc3b8317b3768e78aa711
   subdirs:
+    - plutus-chain-index
     - playground-common
     - plutus-core
     - plutus-contract
@@ -24,6 +26,7 @@ extra-deps:
     - plutus-use-cases
     - freer-extras
     - quickcheck-dynamic
+    - word-array
 # Flat compression
 - pure-zlib-0.6.7@sha256:5a1cdf87bf3079b7d3abace1f94eeb3c597c687a38a08ee2908783e609271467,3487
 # FEAT/NEAT and deps
@@ -45,6 +48,13 @@ extra-deps:
 - nothunks-0.1.2
 - indexed-traversable-instances-0.1
 - base16-bytestring-1.0.1.0
+- beam-core-0.9.0.0@sha256:e5b1cb4d5b8a8a166f3373e8718672a3884feb9a5a133404b047b0af76538023,5282
+- beam-migrate-0.5.0.0@sha256:d3f7e333ec9e96122ccec6be0d38a88f766dfc248323be73fd0b3cee245ea421,4923
+- beam-sqlite-0.5.0.0@sha256:d785bf40101235a72b80652ce27be9c8048de5f7c171ccb23e1e62b8f1ce6e7c,3496
+- partial-order-0.2.0.0@sha256:a0d6ddc9ebcfa965a5cbcff1d06d46a79d44ea5a0335c583c2a51bcb41334487,2275
+- streaming-binary-0.2.2.0@sha256:09b9a9b0291199c5808e88dcf9c93e7b336e740c71efeafd7c835b59794a8c90,1034
+- strict-containers-0.1@sha256:d751696a8a74e368cf778cf98410b43fcd192d68febd4c691faaac1d6c3ab63f,10591
+- Unique-0.4.7.8@sha256:9661f45aa31dde119a2114566166ea38b011a45653337045ee4ced75636533c0,2067
 # A revision was added to keep the bounds down, we don't actually want this!
 # we work around the newer persistent-template by adding flags below
 - eventful-sql-common-0.2.0@rev:0
@@ -79,27 +89,44 @@ extra-deps:
   subdirs:
     - typed-protocols
     - typed-protocols-examples
+    - ouroboros-consensus
     - ouroboros-network
     - ouroboros-network-framework
+    - ouroboros-consensus-byron
+    - ouroboros-consensus-cardano
+    - ouroboros-consensus-shelley
     - io-sim
     - io-sim-classes
     - network-mux
     - Win32-network
+- git: https://github.com/input-output-hk/cardano-config
+  commit: 36e8823330a5705c1fb949fb5ef6b57a2b577e71
+- git: https://github.com/input-output-hk/cardano-node
+  commit: c068afc3367f7f3c283f7e7771753fc6fea3cb5e
+  subdirs:
+    - cardano-api
+    - cardano-cli
+    - cardano-node
 - git: https://github.com/input-output-hk/cardano-prelude
   commit: ee4e7b547a991876e6b05ba542f4e62909f4a571
   subdirs:
     - cardano-prelude
     - cardano-prelude-test
 - git: https://github.com/input-output-hk/cardano-base
-  commit: 4251c0bb6e4f443f00231d28f5f70d42876da055
+  commit: 27f93e64a7d6aa78bfcd1072f0f5c088c79c99fe
   subdirs:
     - binary
+    - binary/test
     - cardano-crypto-class
     - cardano-crypto-tests
     - cardano-crypto-praos
     - slotting
+- git: https://github.com/input-output-hk/cardano-ledger-byron
+  commit: a1e1254c287363b0978c50bfa1e2d28a06e04a9c
+  subdirs: 
+    - cardano-ledger
 - git: https://github.com/input-output-hk/cardano-ledger-specs
-  commit: 097890495cbb0e8b62106bcd090a5721c3f4b36f
+  commit: 7ec7e7a6614eab4c8a1103768e1a12e4ca3f4f58
   subdirs:
     - byron/chain/executable-spec
     - byron/crypto
@@ -113,12 +140,19 @@ extra-deps:
     - shelley/chain-and-ledger/executable-spec
     - shelley-ma/impl
 - git: https://github.com/input-output-hk/iohk-monitoring-framework
-  commit: a89c38ed5825ba17ca79fddb85651007753d699d
+  commit: 0fbd28820b328085b26baad4483f48b0215ec550
   subdirs:
     - contra-tracer
     - iohk-monitoring
     - tracer-transformers
     - plugins/backend-ekg
+    - plugins/backend-aggregation
+    - plugins/backend-trace-forwarder
+    - plugins/backend-monitoring
+- git: https://github.com/tmcgilchrist/transformers-either
+  commit: 89fe30ad8812679609e419bb86b89cee6ef7af26
+  subdirs:
+    - transformers-except
 allow-newer: true
 
 extra-package-dbs: []
