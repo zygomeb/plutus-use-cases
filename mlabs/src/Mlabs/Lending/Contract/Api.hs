@@ -69,16 +69,16 @@ exampleDeposit' = Aeson.encode $ Deposit 100 ("", "")
 data Borrow = Borrow
   { borrow'amount         :: Integer
   , borrow'asset          :: (CurrencySymbol, TokenName)
-  , borrow'rate           :: InterestRateFlag
+  -- , borrow'rate           :: Integer
   }
   deriving stock (Show, Generic, Hask.Eq)
   deriving anyclass (FromJSON, ToJSON, ToSchema)
 
 exampleBorrow :: Either String Borrow
-exampleBorrow = Aeson.eitherDecode undefined
+exampleBorrow = Aeson.eitherDecode "{\"borrow\'amount\":80,\"borrow\'asset\":[{\"unCurrencySymbol\":\"\"},{\"unTokenName\":\"\"}],\"borrow\'rate\":1}" 
 
 exampleBorrow' :: BSL.ByteString
-exampleBorrow' = Aeson.encode $ Borrow 80 ("","") (InterestRateFlag 2)
+exampleBorrow' = Aeson.encode $ Borrow 80 ("","")
 
 -- | Repay part of the borrow
 data Repay = Repay
@@ -215,7 +215,7 @@ class IsEndpoint a => IsGovernAct a where
 -- user acts
 
 instance IsUserAct Deposit                    where { toUserAct Deposit{..} = DepositAct deposit'amount (AssetClass deposit'asset) }
-instance IsUserAct Borrow                     where { toUserAct Borrow{..} = BorrowAct borrow'amount (AssetClass borrow'asset) (fromInterestRateFlag borrow'rate) }
+instance IsUserAct Borrow                     where { toUserAct Borrow{..} = BorrowAct borrow'amount (AssetClass borrow'asset) StableRate }
 instance IsUserAct Repay                      where { toUserAct Repay{..} = RepayAct repay'amount repay'asset (fromInterestRateFlag repay'rate) }
 instance IsUserAct SwapBorrowRateModel        where { toUserAct SwapBorrowRateModel{..} = SwapBorrowRateModelAct swapRate'asset (fromInterestRateFlag swapRate'rate) }
 instance IsUserAct SetUserReserveAsCollateral where { toUserAct SetUserReserveAsCollateral{..} = SetUserReserveAsCollateralAct setCollateral'asset setCollateral'useAsCollateral setCollateral'portion }
