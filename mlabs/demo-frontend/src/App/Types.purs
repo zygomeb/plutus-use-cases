@@ -16,6 +16,9 @@ import Debug.Trace (trace)
 import Data.Generic.Rep (class Generic)
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
+import Data.Lens (over, _2)
+import Data.Lens.Index (ix)
+import Data.Lens.Iso.Newtype (_Newtype)
 import Data.Show (class Show)
 import Data.Show.Generic (genericShow)
 import Matryoshka (Algebra, ana, cata)
@@ -110,7 +113,7 @@ handleFormEvent initialValue event =
 
   -- algebra (SetSubField n subEvent) (FormArrayF schema fields) = FormArrayF schema $ over (ix n) (handleFormEvent initialValue subEvent) fields
 
-  -- algebra (SetSubField n subEvent) s@(FormObjectF fields) = FormObjectF $ over (ix n <<< _Newtype <<< _2) (handleFormEvent initialValue subEvent) fields
+  algebra (SetSubField n subEvent) s@(FormObjectF fields) = FormObjectF $ over (ix n <<< _Newtype <<< _2) (handleFormEvent initialValue subEvent) fields
 
   -- As the code stands, this is the only guarantee we get that every
   -- value in the array will conform to the schema: the fact that we

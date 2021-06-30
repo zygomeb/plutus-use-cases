@@ -47,9 +47,10 @@ actionFormInputs arg =
 actionArgumentField :: forall p. Array String -> Boolean -> FormArgument -> HH.HTML p Action
 actionArgumentField ancestors isNested (Fix (FormObjectF subFields)) =
   HH.div [ HP.classes $ defaultClasses isNested ]
-    (mapWithIndex (\i (JsonTuple field) -> subForm i field) subFields)
+    -- (mapWithIndex (\i (JsonTuple field) -> subForm i field) subFields)
+    -- this line resolves the 'update multiple form field' bug we see.
     -- for some reason adding this change back makes our JSON Form Argument Empty
-        -- (mapWithIndex (\i (JsonTuple field) -> map (SetSubField i) (subForm field)) subFields)
+        (mapWithIndex (\i (JsonTuple field) -> map (SetSubField i) (subForm i field)) subFields)
  where
   subForm index (name /\ arg) =
     ( BS.formGroup_

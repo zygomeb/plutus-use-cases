@@ -73,6 +73,7 @@ import Foreign.Object as FO
 import Matryoshka (class Corecursive, class Recursive, Algebra, ana, cata)
 import Web.HTML.Event.EventTypes (offline)
 
+import Debug.Trace (trace, spy)
 --------------------------------------------------------------------------------
 -- Custom types
 type PabConfig
@@ -315,13 +316,14 @@ formArgumentToJson = cata algebra
   algebra (FormObjectF fields) = encodeFields fields
     where
     encodeFields :: Array (JsonTuple String (Maybe A.Json)) -> Maybe A.Json
-    encodeFields xs = map (encodeJson <<< FO.fromFoldable) $ prepareObject xs
+    encodeFields xs = map (encodeJson <<< FO.fromFoldable) $ prepareObject (spy "fields in cata algebra" xs)
 
     prepareObject :: Array (JsonTuple String (Maybe A.Json)) -> Maybe (Array (Tuple String A.Json))
-    prepareObject = traverse processTuples
+    prepareObject arrtup = traverse processTuples $ arrtup
 
+-- if this encounters a nothing, it fails, this can just be an empty field
     processTuples :: JsonTuple String (Maybe A.Json) -> Maybe (Tuple String A.Json)
-    processTuples = unwrap >>> sequence
+    processTuples jt = unwrap >>> sequence $ (spy "jt in processTuples" jt)
 
   algebra (FormValueF x) = Just $ encodeJson x
 
