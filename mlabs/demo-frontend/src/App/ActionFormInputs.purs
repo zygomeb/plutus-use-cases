@@ -37,6 +37,7 @@ import Data.Json.JsonTuple (JsonTuple(..))
 import PAB.AssocMap as AssocMap
 import PAB.Types (CurrencySymbol(..), Fix(..), FormArgument, FormArgumentF(..), Interval(..), TokenName(..), Value(..))
 
+
 actionFormInputs :: forall p. FormArgument -> HH.HTML p Action
 actionFormInputs arg =
   HH.div 
@@ -91,7 +92,7 @@ actionArgumentField ancestors _ arg@(Fix (FormBoolF b)) =
   where
   elementId = String.joinWith "-" ancestors
 
-actionArgumentField ancestors _ arg@(Fix (FormIntegerF n)) =
+actionArgumentField ancestors isNested arg@(Fix (FormIntegerF n)) =
   HH.div
     [ HP.classes $ defaultClasses false ]
     [ HH.input
