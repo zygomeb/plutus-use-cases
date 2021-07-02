@@ -1,5 +1,6 @@
 -- | Contract API for Lendex application
-module Mlabs.Lending.Contract.Api(
+module Mlabs.Lending.Contract.Api 
+  (
   -- * Actions
   -- ** User actions
     Deposit(..)
@@ -40,7 +41,7 @@ import Plutus.V1.Ledger.Value
 
 import Mlabs.Plutus.Contract
 import Mlabs.Emulator.Types
-import Mlabs.Data.Ray (Ray)
+import qualified Mlabs.Data.Ray as R
 import Mlabs.Lending.Logic.Types
 
 import qualified Data.Aeson as Aeson
@@ -83,7 +84,7 @@ exampleBorrow' = Aeson.encode $ Borrow 80 ("","")
 -- | Repay part of the borrow
 data Repay = Repay
   { repay'amount          :: Integer
-  , repay'asset           :: Coin
+  , repay'asset           :: (CurrencySymbol, TokenName)
   , repay'rate            :: InterestRateFlag
   }
   deriving stock (Show, Generic, Hask.Eq)
@@ -91,7 +92,7 @@ data Repay = Repay
 
 -- | Swap borrow interest rate strategy (stable to variable)
 data SwapBorrowRateModel = SwapBorrowRateModel
-  { swapRate'asset        :: Coin
+  { swapRate'asset        :: (CurrencySymbol, TokenName)
   , swapRate'rate         :: InterestRateFlag
   }
   deriving stock (Show, Generic, Hask.Eq)
@@ -99,9 +100,9 @@ data SwapBorrowRateModel = SwapBorrowRateModel
 
 -- | Set some portion of deposit as collateral or some portion of collateral as deposit
 data SetUserReserveAsCollateral = SetUserReserveAsCollateral
-  { setCollateral'asset           :: Coin       -- ^ which asset to use as collateral or not
-  , setCollateral'useAsCollateral :: Bool       -- ^ should we use as collateral (True) or use as deposit (False)
-  , setCollateral'portion         :: Ray        -- ^ poriton of deposit/collateral to change status (0, 1)
+  { setCollateral'asset           :: (CurrencySymbol, TokenName) -- ^ which asset to use as collateral or not
+  , setCollateral'useAsCollateral :: Bool                        -- ^ should we use as collateral (True) or use as deposit (False)
+  , setCollateral'portion         :: Integer                         -- ^ poriton of deposit/collateral to change status (0, 1)
   }
   deriving stock (Show, Generic, Hask.Eq)
   deriving anyclass (FromJSON, ToJSON, ToSchema)
@@ -109,7 +110,7 @@ data SetUserReserveAsCollateral = SetUserReserveAsCollateral
 -- | Withdraw funds from deposit
 data Withdraw = Withdraw
   { withdraw'amount         :: Integer
-  , withdraw'asset          :: Coin
+  , withdraw'asset          :: (CurrencySymbol, TokenName)
   }
   deriving stock (Show, Generic, Hask.Eq)
   deriving anyclass (FromJSON, ToJSON, ToSchema)
@@ -117,13 +118,13 @@ data Withdraw = Withdraw
 -- | Call to liquidate borrows that are unsafe due to health check
 -- (see <https://docs.aave.com/faq/liquidations> for description)
 data LiquidationCall = LiquidationCall
-  { liquidationCall'collateral     :: Coin        -- ^ which collateral do we take for borrow repay
-  , liquidationCall'debtUser       :: PubKeyHash  -- ^ identifier of the unhealthy borrow user
-  , liquidationCall'debtAsset      :: Coin        -- ^ identifier of the unhealthy borrow asset
-  , liquidationCall'debtToCover    :: Integer     -- ^ how much of the debt we cover
-  , liquidationCall'receiveAToken  :: Bool        -- ^ if true, the user receives the aTokens equivalent
-                                                  --   of the purchased collateral. If false, the user receives
-                                                  --   the underlying asset directly.
+  { liquidationCall'collateral     :: (CurrencySymbol, TokenName) -- ^ which collateral do we take for borrow repay
+  , liquidationCall'debtUser       :: PubKeyHash                  -- ^ identifier of the unhealthy borrow user
+  , liquidationCall'debtAsset      :: (CurrencySymbol, TokenName) -- ^ identifier of the unhealthy borrow asset
+  , liquidationCall'debtToCover    :: Integer                     -- ^ how much of the debt we cover
+  , liquidationCall'receiveAToken  :: Bool                        -- ^ if true, the user receives the aTokens equivalent
+                                                                  --   of the purchased collateral. If false, the user receives
+                                                                  --   the underlying asset directly.
   }
   deriving stock (Show, Generic, Hask.Eq)
   deriving anyclass (FromJSON, ToJSON, ToSchema)
@@ -150,7 +151,7 @@ data StartParams = StartParams
 -- price oracle actions
 
 -- | Updates for the prices of the currencies on the markets
-data SetAssetPrice = SetAssetPrice Coin Ray
+data SetAssetPrice = SetAssetPrice Coin R.Ray
   deriving stock (Show, Generic, Hask.Eq)
   deriving anyclass (FromJSON, ToJSON, ToSchema)
 
@@ -216,11 +217,11 @@ class IsEndpoint a => IsGovernAct a where
 
 instance IsUserAct Deposit                    where { toUserAct Deposit{..} = DepositAct deposit'amount (AssetClass deposit'asset) }
 instance IsUserAct Borrow                     where { toUserAct Borrow{..} = BorrowAct borrow'amount (AssetClass borrow'asset) StableRate }
-instance IsUserAct Repay                      where { toUserAct Repay{..} = RepayAct repay'amount repay'asset (fromInterestRateFlag repay'rate) }
-instance IsUserAct SwapBorrowRateModel        where { toUserAct SwapBorrowRateModel{..} = SwapBorrowRateModelAct swapRate'asset (fromInterestRateFlag swapRate'rate) }
-instance IsUserAct SetUserReserveAsCollateral where { toUserAct SetUserReserveAsCollateral{..} = SetUserReserveAsCollateralAct setCollateral'asset setCollateral'useAsCollateral setCollateral'portion }
-instance IsUserAct Withdraw                   where { toUserAct Withdraw{..} = WithdrawAct withdraw'amount withdraw'asset }
-instance IsUserAct LiquidationCall            where { toUserAct LiquidationCall{..} = LiquidationCallAct liquidationCall'collateral (BadBorrow (UserId liquidationCall'debtUser) liquidationCall'debtAsset) liquidationCall'debtToCover liquidationCall'receiveAToken }
+instance IsUserAct Repay                      where { toUserAct Repay{..} = RepayAct repay'amount (AssetClass repay'asset) (fromInterestRateFlag repay'rate) }
+instance IsUserAct SwapBorrowRateModel        where { toUserAct SwapBorrowRateModel{..} = SwapBorrowRateModelAct (AssetClass swapRate'asset) (fromInterestRateFlag swapRate'rate) }
+instance IsUserAct SetUserReserveAsCollateral where { toUserAct SetUserReserveAsCollateral{..} = SetUserReserveAsCollateralAct (AssetClass setCollateral'asset) setCollateral'useAsCollateral (R.fromInteger setCollateral'portion) }
+instance IsUserAct Withdraw                   where { toUserAct Withdraw{..} = WithdrawAct withdraw'amount (AssetClass withdraw'asset) }
+instance IsUserAct LiquidationCall            where { toUserAct LiquidationCall{..} = LiquidationCallAct (AssetClass liquidationCall'collateral) (BadBorrow (UserId liquidationCall'debtUser) (AssetClass liquidationCall'debtAsset)) liquidationCall'debtToCover liquidationCall'receiveAToken }
 
 -- price acts
 

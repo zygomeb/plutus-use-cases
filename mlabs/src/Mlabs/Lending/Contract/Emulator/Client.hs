@@ -10,6 +10,7 @@ import Prelude
 
 import Data.Functor (void)
 
+import Mlabs.Data.Ray as R
 import Mlabs.Plutus.Contract
 import Mlabs.Emulator.Types
 import Mlabs.Lending.Logic.Types
@@ -30,14 +31,14 @@ callUserAct lid wal act = do
   void $ case act of
     DepositAct{..}                    -> callEndpoint' hdl $ Deposit act'amount (unAssetClass act'asset)
     BorrowAct{..}                     -> callEndpoint' hdl $ Borrow  act'amount (unAssetClass act'asset) -- (toInterestRateFlag act'rate)
-    RepayAct{..}                      -> callEndpoint' hdl $ Repay   act'amount act'asset (toInterestRateFlag act'rate)
-    SwapBorrowRateModelAct{..}        -> callEndpoint' hdl $ SwapBorrowRateModel act'asset (toInterestRateFlag act'rate)
-    SetUserReserveAsCollateralAct{..} -> callEndpoint' hdl $ SetUserReserveAsCollateral act'asset act'useAsCollateral act'portion
-    WithdrawAct{..}                   -> callEndpoint' hdl $ Withdraw act'amount act'asset
+    RepayAct{..}                      -> callEndpoint' hdl $ Repay   act'amount (unAssetClass act'asset) (toInterestRateFlag act'rate)
+    SwapBorrowRateModelAct{..}        -> callEndpoint' hdl $ SwapBorrowRateModel (unAssetClass act'asset) (toInterestRateFlag act'rate)
+    SetUserReserveAsCollateralAct{..} -> callEndpoint' hdl $ SetUserReserveAsCollateral (unAssetClass act'asset) act'useAsCollateral (R.toInteger act'portion)
+    WithdrawAct{..}                   -> callEndpoint' hdl $ Withdraw act'amount (unAssetClass act'asset)
     FlashLoanAct                      -> pure ()
     LiquidationCallAct{..}            ->
       case act'debt of
-        BadBorrow (UserId pkh) asset  -> callEndpoint' hdl $ LiquidationCall act'collateral pkh asset act'debtToCover act'receiveAToken
+        BadBorrow (UserId pkh) asset  -> callEndpoint' hdl $ LiquidationCall (unAssetClass act'collateral) pkh (unAssetClass asset) act'debtToCover act'receiveAToken
         _                             -> throwError $ GenericError "Bad borrow has wrong settings"
 
 -- | Calls price oracle act
