@@ -70,6 +70,8 @@ data Action
   | SetField FieldEvent
   | SetSubField Int Action
   | Submit
+  | AddSubField
+  | RemoveSubField Int
 
 -- TODO: Use BigInt for SetBigIntegerField
 data FieldEvent
