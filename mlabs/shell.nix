@@ -8,16 +8,16 @@ with import ./nix { };
   # Should try and get the extra cardano dependencies in here...
   additional = ps:
     with ps; [
+      pab.plutus_ledger_with_docs
+      playground-common
+      plutus-contract
+      plutus-core
+      plutus-ledger-api
       plutus-pab
       plutus-tx
       plutus-tx-plugin
-      plutus-contract
-      plutus-ledger-api
-      pab.plutus_ledger_with_docs
-      plutus-core
-      playground-common
-      prettyprinter-configurable
       plutus-use-cases
+      prettyprinter-configurable
     ];
 
   withHoogle = true;
@@ -27,19 +27,23 @@ with import ./nix { };
   propagatedBuildInputs = with pkgs;
     [
       # Haskell Tools
-      stack
-      plutus.plutus.hlint
-      haskellPackages.fourmolu
-      git
       ghc
+      ghcid
+      git
+      haskellPackages.fourmolu
+      haskellPackages.record-dot-preprocessor
+      haskellPackages.record-hasfield
       nixfmt
+      plutus.plutus.haskell-language-server
+      plutus.plutus.hlint
+      stack
 
       # Pab
       pab.plutus_pab_client
 
       # Example contracts
-      plutus.plutus-currency
       plutus.plutus-atomic-swap
+      plutus.plutus-currency
 
     ] ++ (builtins.attrValues pab.plutus_pab_exes);
 

@@ -1,5 +1,10 @@
 dist-newstyle/
 .stack-work/
+demo-frontend/.spago
+demo-frontend/output
+demo-frontend/node_modules
+demo-frontend/.cache
+demo-frontend/dist
 stack.yaml.lock
 
 # PureScript files
