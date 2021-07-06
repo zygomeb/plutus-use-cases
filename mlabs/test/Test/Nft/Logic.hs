@@ -3,6 +3,8 @@ module Test.Nft.Logic(
     test
 ) where
 
+import Prelude
+
 import Test.Tasty
 import Test.Tasty.HUnit
 

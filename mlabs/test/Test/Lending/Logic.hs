@@ -8,6 +8,8 @@ module Test.Lending.Logic(
   , coin1, coin2, coin3
 ) where
 
+import Prelude
+
 import Test.Tasty
 import Test.Tasty.HUnit
 

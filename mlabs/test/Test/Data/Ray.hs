@@ -1,5 +1,7 @@
 module Test.Data.Ray where
 
+import Prelude
+
 import Test.Tasty
 import Test.Tasty.HUnit as HU
 

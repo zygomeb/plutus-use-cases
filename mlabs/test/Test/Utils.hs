@@ -5,6 +5,7 @@ module Test.Utils(
   , concatPredicates
 ) where
 
+import Prelude
 
 import Data.Functor (void)
 import Plutus.Contract.Test

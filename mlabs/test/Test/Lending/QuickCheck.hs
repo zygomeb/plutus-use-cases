@@ -1,6 +1,9 @@
 {-# LANGUAGE NumericUnderscores #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Test.Lending.QuickCheck where
+
+import Prelude
 
 import Mlabs.Emulator.Types (UserId(..), Coin, adaCoin)
 import Mlabs.Lending.Logic.Types (UserAct(..))

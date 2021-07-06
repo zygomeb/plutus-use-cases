@@ -1,5 +1,7 @@
 module Test.Lending.Api where
 
+import Prelude
+
 import Data.Aeson as A
 import Data.Aeson.Encoding as AE
 import Data.ByteString (ByteString)

@@ -1,5 +1,7 @@
 module Main where
 
+import Prelude
+
 import Test.Tasty
 import Test.Tasty.ExpectedFailure (ignoreTest)
 
