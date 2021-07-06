@@ -11,7 +11,6 @@
 module Mlabs.Data.Ray(
     Ray(..)
   , fromInteger
-  , toInteger
   , (%)
   , fromRational
   , toRational
@@ -27,7 +26,7 @@ import GHC.Generics
 import qualified Prelude as Hask
 import PlutusTx (IsData, Lift) 
 import PlutusCore.Universe (DefaultUni)
-import PlutusTx.Prelude hiding (fromInteger, toInteger, fromRational, recip, (%), round, properFraction, toRational)
+import PlutusTx.Prelude hiding (fromInteger, fromRational, recip, (%), round, properFraction, toRational)
 import Playground.Contract (ToSchema)
 import qualified PlutusTx.Ratio as R
 
@@ -70,9 +69,6 @@ instance MultiplicativeMonoid Ray where
 fromInteger :: Integer -> Ray
 fromInteger n = Ray (n * base)
 
-toInteger :: Ray -> Integer
-toInteger (Ray n) = n
-
 {-# INLINABLE fromRational #-}
 -- | Convert from Rational
 fromRational :: Rational -> Ray
@@ -99,4 +95,3 @@ properFraction :: Ray -> (Integer, Ray)
 properFraction (Ray a) = (d, Ray m)
   where
     (d, m) = divMod a base
-

@@ -6,8 +6,8 @@
 {-# OPTIONS_GHC -fno-ignore-interface-pragmas #-}
 {-# OPTIONS_GHC -fno-omit-interface-pragmas #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-module Mlabs.Emulator.Types(
-    UserId(..)
+module Mlabs.Emulator.Types
+  ( UserId(..)
   , Coin
   , adaCoin
   , ownUserId

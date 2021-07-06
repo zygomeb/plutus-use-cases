@@ -33,7 +33,7 @@ callUserAct lid wal act = do
     BorrowAct{..}                     -> callEndpoint' hdl $ Borrow  act'amount (unAssetClass act'asset) -- (toInterestRateFlag act'rate)
     RepayAct{..}                      -> callEndpoint' hdl $ Repay   act'amount (unAssetClass act'asset) (toInterestRateFlag act'rate)
     SwapBorrowRateModelAct{..}        -> callEndpoint' hdl $ SwapBorrowRateModel (unAssetClass act'asset) (toInterestRateFlag act'rate)
-    SetUserReserveAsCollateralAct{..} -> callEndpoint' hdl $ SetUserReserveAsCollateral (unAssetClass act'asset) act'useAsCollateral (R.toInteger act'portion)
+    SetUserReserveAsCollateralAct{..} -> callEndpoint' hdl $ SetUserReserveAsCollateral (unAssetClass act'asset) act'useAsCollateral act'portion
     WithdrawAct{..}                   -> callEndpoint' hdl $ Withdraw act'amount (unAssetClass act'asset)
     FlashLoanAct                      -> pure ()
     LiquidationCallAct{..}            ->
@@ -46,7 +46,7 @@ callPriceAct :: LendexId -> Emulator.Wallet -> PriceAct -> EmulatorTrace ()
 callPriceAct lid wal act = do
   hdl <- activateContractWallet wal (oracleEndpoints lid)
   void $ case act of
-    SetAssetPriceAct coin rate -> callEndpoint @"set-asset-price" hdl $ SetAssetPrice coin rate
+    SetAssetPriceAct coin rate -> callEndpoint @"set-asset-price" hdl $ SetAssetPrice (unAssetClass coin) rate
 
 -- | Calls govern act
 callGovernAct :: LendexId -> Emulator.Wallet -> GovernAct -> EmulatorTrace ()

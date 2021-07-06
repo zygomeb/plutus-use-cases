@@ -3,6 +3,7 @@ module Main where
 import Test.Tasty
 import Test.Tasty.ExpectedFailure (ignoreTest)
 
+import qualified Test.Data.Ray         as Data.Ray
 import qualified Test.Lending.Contract as Lending.Contract
 import qualified Test.Lending.Logic    as Lending.Logic
 import qualified Test.Lending.Api      as Lending.Api
@@ -17,6 +18,8 @@ main = defaultMain $ testGroup "tests"
   , testGroup "Lending" [ Lending.Api.test
                         , Lending.Logic.test
                         , contract Lending.Contract.test
+                        ]
+  , testGroup "Data"    [ Data.Ray.test
                         ]
   ]
   where

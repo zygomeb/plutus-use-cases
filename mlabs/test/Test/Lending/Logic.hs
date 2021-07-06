@@ -231,7 +231,7 @@ testAppConfig = AppConfig reserves users lendingPoolCurrency admins oracles
     oracles = [user1]
 
     reserves = fmap (\(coin, aCoin) -> CoinCfg
-                                        { coinCfg'coin             = coin
+                                        { coinCfg'coin             = (unAssetClass coin)
                                         , coinCfg'rate             = R.fromInteger 1
                                         , coinCfg'aToken           = aCoin
                                         , coinCfg'interestModel    = defaultInterestModel

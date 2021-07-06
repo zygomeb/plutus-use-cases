@@ -102,7 +102,7 @@ data SwapBorrowRateModel = SwapBorrowRateModel
 data SetUserReserveAsCollateral = SetUserReserveAsCollateral
   { setCollateral'asset           :: (CurrencySymbol, TokenName) -- ^ which asset to use as collateral or not
   , setCollateral'useAsCollateral :: Bool                        -- ^ should we use as collateral (True) or use as deposit (False)
-  , setCollateral'portion         :: Integer                         -- ^ poriton of deposit/collateral to change status (0, 1)
+  , setCollateral'portion         :: R.Ray                       -- ^ poriton of deposit/collateral to change status (0, 1)
   }
   deriving stock (Show, Generic, Hask.Eq)
   deriving anyclass (FromJSON, ToJSON, ToSchema)
@@ -135,7 +135,9 @@ data LiquidationCall = LiquidationCall
 -- admin actions
 
 -- | Adds new reserve
-data AddReserve = AddReserve CoinCfg
+data AddReserve = AddReserve
+  { addReserve'coinConfig :: CoinCfg
+  }
   deriving stock (Show, Generic, Hask.Eq)
   deriving anyclass (FromJSON, ToJSON, ToSchema)
 
@@ -151,7 +153,10 @@ data StartParams = StartParams
 -- price oracle actions
 
 -- | Updates for the prices of the currencies on the markets
-data SetAssetPrice = SetAssetPrice Coin R.Ray
+data SetAssetPrice = SetAssetPrice 
+  { setAssetPrice'asset :: (CurrencySymbol, TokenName)
+  , setAssetPrice'rate  :: R.Ray
+  }
   deriving stock (Show, Generic, Hask.Eq)
   deriving anyclass (FromJSON, ToJSON, ToSchema)
 
@@ -219,17 +224,17 @@ instance IsUserAct Deposit                    where { toUserAct Deposit{..} = De
 instance IsUserAct Borrow                     where { toUserAct Borrow{..} = BorrowAct borrow'amount (AssetClass borrow'asset) StableRate }
 instance IsUserAct Repay                      where { toUserAct Repay{..} = RepayAct repay'amount (AssetClass repay'asset) (fromInterestRateFlag repay'rate) }
 instance IsUserAct SwapBorrowRateModel        where { toUserAct SwapBorrowRateModel{..} = SwapBorrowRateModelAct (AssetClass swapRate'asset) (fromInterestRateFlag swapRate'rate) }
-instance IsUserAct SetUserReserveAsCollateral where { toUserAct SetUserReserveAsCollateral{..} = SetUserReserveAsCollateralAct (AssetClass setCollateral'asset) setCollateral'useAsCollateral (R.fromInteger setCollateral'portion) }
+instance IsUserAct SetUserReserveAsCollateral where { toUserAct SetUserReserveAsCollateral{..} = SetUserReserveAsCollateralAct (AssetClass setCollateral'asset) setCollateral'useAsCollateral setCollateral'portion }
 instance IsUserAct Withdraw                   where { toUserAct Withdraw{..} = WithdrawAct withdraw'amount (AssetClass withdraw'asset) }
 instance IsUserAct LiquidationCall            where { toUserAct LiquidationCall{..} = LiquidationCallAct (AssetClass liquidationCall'collateral) (BadBorrow (UserId liquidationCall'debtUser) (AssetClass liquidationCall'debtAsset)) liquidationCall'debtToCover liquidationCall'receiveAToken }
 
 -- price acts
 
-instance IsPriceAct SetAssetPrice             where { toPriceAct (SetAssetPrice asset rate) = SetAssetPriceAct asset rate }
+instance IsPriceAct SetAssetPrice             where { toPriceAct (SetAssetPrice asset rate) = SetAssetPriceAct (AssetClass asset) rate }
 
 -- govern acts
 
-instance IsGovernAct AddReserve               where { toGovernAct (AddReserve cfg) = AddReserveAct cfg }
+instance IsGovernAct AddReserve               where { toGovernAct AddReserve{..} = AddReserveAct addReserve'coinConfig }
 
 -- endpoint names
 

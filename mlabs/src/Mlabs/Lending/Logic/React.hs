@@ -12,6 +12,7 @@ module Mlabs.Lending.Logic.React(
 
 import qualified Prelude as Hask
 
+import Plutus.V1.Ledger.Value (AssetClass(..))
 import qualified PlutusTx.Numeric as N
 import PlutusTx.Prelude
 import qualified PlutusTx.AssocMap as M
@@ -272,11 +273,12 @@ react input = do
 
     addReserve cfg@CoinCfg{..} = do
       st <- get
-      if M.member coinCfg'coin (lp'reserves st)
+      let coin = (AssetClass coinCfg'coin)
+      if M.member coin (lp'reserves st)
         then throwError "Reserve is already present"
         else do
-          let newReserves = M.insert coinCfg'coin (initReserve cfg) $ lp'reserves st
-              newCoinMap  = M.insert coinCfg'aToken coinCfg'coin $ lp'coinMap st
+          let newReserves = M.insert coin (initReserve cfg) $ lp'reserves st
+              newCoinMap  = M.insert coinCfg'aToken coin $ lp'coinMap st
           put $ st { lp'reserves = newReserves, lp'coinMap = newCoinMap }
           return []
 

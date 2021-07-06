@@ -55,7 +55,7 @@ data AppConfig = AppConfig
 initApp :: AppConfig -> LendingApp
 initApp AppConfig{..} = App
   { app'st = LendingPool
-      { lp'reserves       = (AM.fromList (fmap (\x -> (coinCfg'coin x, initReserve x)) appConfig'reserves))
+      { lp'reserves       = (AM.fromList (fmap (\x -> (AssetClass (coinCfg'coin x), initReserve x)) appConfig'reserves))
       , lp'users          = AM.empty
       , lp'currency       = appConfig'currencySymbol
       , lp'coinMap        = coinMap
@@ -67,7 +67,7 @@ initApp AppConfig{..} = App
   , app'wallets = BchState $ M.fromList $ (Self, defaultBchWallet) : appConfig'users
   }
   where
-    coinMap = AM.fromList $ fmap (\CoinCfg{..} -> (coinCfg'aToken, coinCfg'coin)) $ appConfig'reserves
+    coinMap = AM.fromList $ fmap (\CoinCfg{..} -> (coinCfg'aToken, AssetClass coinCfg'coin)) $ appConfig'reserves
 
 -- | Default application.
 -- It allocates three users nad three reserves for Dollars, Euros and Liras.
@@ -84,7 +84,7 @@ defaultAppConfig = AppConfig reserves users curSym admins oracles
 
     reserves = fmap (\name ->
         CoinCfg
-          { coinCfg'coin = toCoin name
+          { coinCfg'coin = toUnwrappedAssetClass name
           , coinCfg'rate =  R.fromInteger 1
           , coinCfg'aToken = toAToken name
           , coinCfg'interestModel = defaultInterestModel
@@ -98,6 +98,9 @@ defaultAppConfig = AppConfig reserves users curSym admins oracles
 
 toCoin :: ByteString -> Coin
 toCoin str = AssetClass (currencySymbol str, tokenName str)
+
+toUnwrappedAssetClass :: ByteString -> (CurrencySymbol, TokenName)
+toUnwrappedAssetClass str = (currencySymbol str, tokenName str)
 
 ----------------------------------------------------------
 -- scripts

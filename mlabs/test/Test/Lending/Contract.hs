@@ -56,7 +56,7 @@ depositScript :: Trace.EmulatorTrace ()
 depositScript = do
   L.callStartLendex lendexId wAdmin $ L.StartParams
     { sp'coins = fmap (\(coin, aCoin) -> CoinCfg
-                                          { coinCfg'coin = coin
+                                          { coinCfg'coin = (Value.unAssetClass coin)
                                           , coinCfg'rate = R.fromInteger 1
                                           , coinCfg'aToken = aCoin
                                           , coinCfg'interestModel = defaultInterestModel
