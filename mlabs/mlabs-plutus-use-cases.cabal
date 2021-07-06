@@ -272,6 +272,7 @@ Test-suite mlabs-plutus-use-cases-tests
   hs-source-dirs:      test
   Main-is:             Main.hs
   Other-modules:
+                       Test.Lending.Api
                        Test.Lending.Contract
                        Test.Lending.Init
                        Test.Lending.Logic
