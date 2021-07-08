@@ -26,7 +26,6 @@ import GHC.Generics
 import Plutus.Contract
 import Playground.Contract
 
-import Mlabs.Data.Ray (Ray)
 import Mlabs.Plutus.Contract
 import Mlabs.Nft.Logic.Types
 
@@ -55,7 +54,7 @@ data SetPrice = SetPrice
 -- | Parameters to init NFT
 data StartParams = StartParams
   { sp'content :: ByteString      -- ^ NFT content
-  , sp'share   :: Ray             -- ^ author share [0, 1] on reselling of the NFT
+  , sp'share   :: Rational        -- ^ author share [0, 1] on reselling of the NFT
   , sp'price   :: Maybe Integer   -- ^ current price of NFT, if it's nothing then nobody can buy it.
   }
   deriving stock (Show, Generic)

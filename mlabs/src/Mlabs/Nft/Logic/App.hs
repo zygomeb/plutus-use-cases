@@ -34,7 +34,7 @@ import Mlabs.Nft.Logic.React
 import Mlabs.Nft.Logic.Types
 
 import qualified Data.Map.Strict as M
-import qualified Mlabs.Data.Ray as R
+import qualified PlutusTx.Ratio as R
 
 -- | NFT test emulator. We use it test the logic.
 type NftApp = App Nft Act

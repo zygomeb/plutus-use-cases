@@ -22,7 +22,7 @@ import Plutus.V1.Ledger.Tx
 import Plutus.Contract hiding (when)
 
 import Mlabs.Plutus.PAB
-import qualified Mlabs.Data.Ray as R
+import qualified PlutusTx.Ratio as R
 import Mlabs.System.Console.PrettyLogger
 
 import Mlabs.Lending.Logic.Types hiding (Wallet(..), User(..))
@@ -75,7 +75,7 @@ main = runSimulator lendexId initContract $ do
     call oracle $ SetAssetPrice coin2 (R.fromInteger 2)
     call user2 $ LiquidationCall
                   { liquidationCall'collateral     = coin1
-                  , liquidationCall'debtUser       = (toPubKeyHash w1)
+                  , liquidationCall'debtUser       = toPubKeyHash w1
                   , liquidationCall'debtAsset      = coin2
                   , liquidationCall'debtToCover    = 10
                   , liquidationCall'receiveAToken  = True

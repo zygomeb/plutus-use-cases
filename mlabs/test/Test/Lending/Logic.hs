@@ -21,7 +21,7 @@ import Mlabs.Lending.Logic.Types
 
 
 import qualified Data.Map.Strict as M
-import qualified Mlabs.Data.Ray as R
+import qualified PlutusTx.Ratio as R
 
 -- | Test suite for a logic of lending application
 test :: TestTree

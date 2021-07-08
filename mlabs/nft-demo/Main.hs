@@ -13,7 +13,7 @@ import Plutus.Contract
 import Mlabs.Nft.Logic.Types
 import Mlabs.Nft.Contract.Simulator.Handler
 import qualified Mlabs.Nft.Contract as Nft
-import qualified Mlabs.Data.Ray as R
+import qualified PlutusTx.Ratio as R
 
 import Mlabs.Plutus.PAB
 import Mlabs.System.Console.PrettyLogger

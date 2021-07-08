@@ -57,7 +57,6 @@ library
         Mlabs.Data.AssocMap
         Mlabs.Data.List
         Mlabs.Data.Maybe
-        Mlabs.Data.Ray
         Mlabs.Data.Ord
         Mlabs.Demo.Contract.Burn
         Mlabs.Demo.Contract.Mint

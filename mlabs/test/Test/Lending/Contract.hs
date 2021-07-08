@@ -10,7 +10,7 @@ import Test.Tasty
 import Plutus.Contract.Test hiding (tx)
 import qualified Plutus.Trace.Emulator as Trace
 
-import qualified Mlabs.Data.Ray as R
+import qualified PlutusTx.Ratio as R
 
 import Mlabs.Emulator.Scene
 import Mlabs.Lending.Logic.Types ( UserAct(..), InterestRate(..), CoinCfg(..), defaultInterestModel

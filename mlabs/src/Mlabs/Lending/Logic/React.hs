@@ -20,7 +20,7 @@ import qualified PlutusTx.These as PlutusTx
 import Control.Monad.Except hiding (Functor(..), mapM)
 import Control.Monad.State.Strict hiding (Functor(..), mapM)
 
-import qualified Mlabs.Data.Ray as R
+import qualified PlutusTx.Ratio as R
 import Mlabs.Control.Check
 import Mlabs.Emulator.Blockchain
 import Mlabs.Lending.Logic.InterestRate (addDeposit)

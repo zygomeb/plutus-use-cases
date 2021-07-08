@@ -50,7 +50,6 @@ import Plutus.V1.Ledger.Value
 
 import Mlabs.Plutus.Contract
 import Mlabs.Emulator.Types
-import Mlabs.Data.Ray (Ray)
 import Mlabs.Lending.Logic.Types
 
 -----------------------------------------------------------------------
@@ -96,7 +95,7 @@ data SwapBorrowRateModel = SwapBorrowRateModel
 data SetUserReserveAsCollateral = SetUserReserveAsCollateral
   { setCollateral'asset           :: Coin       -- ^ which asset to use as collateral or not
   , setCollateral'useAsCollateral :: Bool       -- ^ should we use as collateral (True) or use as deposit (False)
-  , setCollateral'portion         :: Ray        -- ^ portion of deposit/collateral to change status (0, 1)
+  , setCollateral'portion         :: Rational   -- ^ portion of deposit/collateral to change status (0, 1)
   }
   deriving stock (Show, Generic, Hask.Eq)
   deriving anyclass (FromJSON, ToJSON, ToSchema)
@@ -145,7 +144,7 @@ data StartParams = StartParams
 -- price oracle actions
 
 -- | Updates for the prices of the currencies on the markets
-data SetAssetPrice = SetAssetPrice Coin Ray
+data SetAssetPrice = SetAssetPrice Coin Rational
   deriving stock (Show, Generic, Hask.Eq)
   deriving anyclass (FromJSON, ToJSON, ToSchema)
 

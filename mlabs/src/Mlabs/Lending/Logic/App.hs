@@ -25,6 +25,8 @@ module Mlabs.Lending.Logic.App(
 ) where
 
 import PlutusTx.Prelude hiding ((%))
+import qualified PlutusTx.Ratio as R
+
 import Plutus.V1.Ledger.Value
 import Plutus.V1.Ledger.Crypto (PubKeyHash(..))
 
@@ -37,8 +39,6 @@ import Mlabs.Lending.Logic.Types
 
 import qualified Data.Map.Strict as M
 import qualified PlutusTx.AssocMap as AM
-import Mlabs.Data.Ray ((%))
-import qualified Mlabs.Data.Ray as R
 
 type LendingApp = App LendingPool Act
 
@@ -95,8 +95,8 @@ defaultAppConfig = AppConfig reserves users curSym admins oracles
     reserves = fmap (\name ->
         CoinCfg
           { coinCfg'coin = toCoin name
-          , coinCfg'rate =  R.fromInteger 1
-          , coinCfg'aToken = toAToken name
+          , coinCfg'rate = R.fromInteger 1
+          , coinCfg'aToken  = toAToken name
           , coinCfg'interestModel = defaultInterestModel
           , coinCfg'liquidationBonus = 5 % 100
           }) coinNames
