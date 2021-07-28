@@ -18,7 +18,9 @@ import Wallet.Emulator qualified as Emulator
 import Mlabs.Lending.Contract.Api qualified as Api
 import Mlabs.Lending.Contract.Server (adminEndpoints, oracleEndpoints, userEndpoints, queryEndpoints)
 import Mlabs.Lending.Logic.Types qualified as Types
-import Mlabs.Plutus.Contract (callEndpoint')
+import Mlabs.Plutus.Contract (callEndpoint', EndpointSymbol)
+
+import Mlabs.Data.Ray (Ray)
 
 ---------------------------------------------------------
 -- call endpoints (for debug and testing)
@@ -60,13 +62,23 @@ callStartLendex lid wal sl = do
   hdl <- activateContractWallet wal (adminEndpoints lid)
   void $ callEndpoint @"start-lendex" hdl sl
 
--- todo: make a better query dispatch if the number of queries grows 
+-- todo: make a better query dispatch if the number of queries grows
+--       this could be done with a typeclass of Queries with an assosciated resulting query type
+--       (probably better than just hiding the result in a multi-constructor-type, todo after #74)
 -- | Queries for all Lendexes started  with given StartParams
 queryAllLendexes :: Types.LendexId -> Emulator.Wallet -> Api.QueryAllLendexes -> EmulatorTrace [(Address, Types.LendingPool)]
 queryAllLendexes lid wal spm = do
   hdl <- activateContractWallet wal (queryEndpoints lid)
-  void $ callEndpoint @"query-all-lendexes" hdl spm
+  void $ callEndpoint @"query-all-lendexes" hdl spm -- todo: EndpointSymbol instead of Symbol directly
   ls' <- observableState hdl
   let Just (Last (Types.QueryResAllLendexes ls)) = ls'
+  pure ls
+
+queryInterestRatePerBlock :: Types.LendexId -> Emulator.Wallet -> Api.QueryInterestRatePerBlock -> EmulatorTrace Ray
+queryInterestRatePerBlock lid wal spm = do
+  hdl <- activateContractWallet wal (queryEndpoints lid)
+  void $ callEndpoint @"query-interest-rate-per-block" hdl spm
+  ls' <- observableState hdl
+  let Just (Last (Types.QueryResInterestRatePerBlock ls)) = ls'
   pure ls
 

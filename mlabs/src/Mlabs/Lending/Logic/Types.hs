@@ -354,8 +354,9 @@ data InterestRate = StableRate | VariableRate
   deriving stock (Show, Generic, Hask.Eq)
   deriving anyclass (FromJSON, ToJSON)
 
--- If another query is added, extend this data type 
-data QueryRes = QueryResAllLendexes [(Address, LendingPool)]
+-- If another query is added, extend this data type
+-- todo - restructure it, see Client.hs
+data QueryRes = QueryResAllLendexes [(Address, LendingPool)] | QueryResInterestRatePerBlock Ray
   deriving stock (Show, Generic)
   deriving anyclass (FromJSON, ToJSON)
 

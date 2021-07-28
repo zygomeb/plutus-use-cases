@@ -25,7 +25,9 @@ module Mlabs.Lending.Contract.Api(
   -- ** Admin actions
   , AddReserve(..)
   , StartLendex(..)
+  -- ** Query actions
   , QueryAllLendexes(..)
+  , QueryInterestRatePerBlock(..)
   -- ** Price oracle actions
   , SetAssetPrice(..)
   -- ** Action conversions
@@ -140,6 +142,9 @@ newtype StartLendex = StartLendex Types.StartParams
 newtype QueryAllLendexes = QueryAllLendexes Types.StartParams
   deriving newtype (Show, Generic, Hask.Eq, FromJSON, ToJSON, ToSchema)
 
+newtype QueryInterestRatePerBlock = QueryInterestRatePerBlock () -- have to have unit here else GHC can't generate instances
+  deriving newtype (Show, Generic, Hask.Eq, FromJSON, ToJSON, ToSchema)
+
 -- price oracle actions
 
 -- | Updates for the prices of the currencies on the markets
@@ -177,6 +182,7 @@ type AdminSchema =
 type QuerySchema =
   BlockchainActions
     .\/ Call QueryAllLendexes
+    .\/ Call QueryInterestRatePerBlock
 
 ----------------------------------------------------------
 -- proxy types for ToSchema instance
@@ -262,3 +268,6 @@ instance IsEndpoint StartLendex where
 
 instance IsEndpoint QueryAllLendexes where
   type EndpointSymbol QueryAllLendexes = "query-all-lendexes"
+
+instance IsEndpoint QueryInterestRatePerBlock where
+  type EndpointSymbol QueryInterestRatePerBlock = "query-interest-rate-per-block"
